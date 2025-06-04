@@ -20,11 +20,16 @@ import { ColorModeButton } from './components/ui/color-mode';
 import Home from './pages/Home';
 import LaunchPage from './pages/LaunchPage';
 import MarsPage from './pages/MarsPage';
+import SolViewer from './pages/SolViewer';
+import ExplorePage from './pages/ExplorePage';   // New Page
+import SolarSimPage from './pages/SolarSimPage'; // New Page
 
 const navigationItems = [
   { path: '/', label: 'Home', isHome: true },
+  { path: '/explore', label: 'Explore' },
   { path: '/launches', label: 'Launch Tracker' },
   { path: '/mars', label: 'Mars Photos' },
+  { path: '/solarsim', label: 'SolarSim' },
 ];
 
 function Navigation() {
@@ -39,8 +44,12 @@ function Navigation() {
               key={path}
               as={RouterLink}
               to={path}
-              fontWeight={location.pathname === path ? 'bold' : 'normal'}
-              color={useColorModeValue('whiteAlpha.900', 'white')}
+              fontWeight={location.pathname === path ? 'bold' : 'medium'}
+              color={
+                location.pathname === path
+                  ? 'teal.400'
+                  : useColorModeValue('whiteAlpha.900', 'white')
+              }
             >
               {label}
             </Link>
@@ -66,8 +75,12 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<ExplorePage />} />
               <Route path="/launches" element={<LaunchPage />} />
               <Route path="/mars" element={<MarsPage />} />
+              <Route path="/mars/sol/:solId" element={<SolViewer />} />
+              <Route path="/solarsim" element={<SolarSimPage />} />
+
               <Route
                 path="*"
                 element={

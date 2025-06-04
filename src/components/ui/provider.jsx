@@ -1,5 +1,5 @@
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
-import theme from './theme' // optional custom theme
+import theme from './theme' //  custom theme
 
 export function Provider({ children }) {
   return (

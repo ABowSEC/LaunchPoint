@@ -1,5 +1,6 @@
 import { Box, Heading, Text, Input, VStack, Container } from "@chakra-ui/react";
 import { useState } from "react";
+import Timeline from "../components/Timeline";
 
 export default function ExplorePage() {
   const [query, setQuery] = useState("");
@@ -32,7 +33,22 @@ export default function ExplorePage() {
             Feature under construction — soon you'll be able to search for images, missions, and events.
           </Text>
         </Box>
+
+        <Container maxW="6xl" py={12}>
+            <Heading size="xl" mb={6}>Explore Missions & Discoveries</Heading>
+  
+            <Text fontSize="lg" mb={8}>
+                Dive into NASA’s legacy—from early Apollo missions to modern Mars exploration. Click any mission for reports or media.
+            </Text>
+
+            <Timeline />  {/* Embedded timeline component here */}
+
+            {/* Optionally add filters or search above it */}
+        </Container>
       </VStack>
     </Container>
+
+    
+
   );
 }

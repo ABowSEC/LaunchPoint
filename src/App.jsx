@@ -21,15 +21,16 @@ import Home from './pages/Home';
 import LaunchPage from './pages/LaunchPage';
 import MarsPage from './pages/MarsPage';
 import SolViewer from './pages/SolViewer';
-import ExplorePage from './pages/ExplorePage';   // New Page
-import SolarSimPage from './pages/SolarSimPage'; // New Page
+import ExplorePage from './pages/ExplorePage';
+import SolarSimPage from './pages/SolarSimPage';
+import ChatBotDrawer from './components/ChatBotDrawer';
 
 const navigationItems = [
   { path: '/', label: 'Home', isHome: true },
-  { path: '/explore', label: 'Explore' },
   { path: '/launches', label: 'Launch Tracker' },
   { path: '/mars', label: 'Mars Photos' },
-  { path: '/solarsim', label: 'SolarSim' },
+  { path: '/explore', label: 'Explore' },
+  { path: '/solarsim', label: 'Solar System' },
 ];
 
 function Navigation() {
@@ -45,17 +46,14 @@ function Navigation() {
               as={RouterLink}
               to={path}
               fontWeight={location.pathname === path ? 'bold' : 'medium'}
-              color={
-                location.pathname === path
-                  ? 'teal.400'
-                  : useColorModeValue('whiteAlpha.900', 'white')
-              }
+              color={location.pathname === path ? 'teal.400' : useColorModeValue('whiteAlpha.900', 'white')}
             >
               {label}
             </Link>
           ))}
           <Spacer />
           <ColorModeButton />
+          <ChatBotDrawer />
         </Flex>
       </Container>
     </Box>
@@ -75,10 +73,10 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/explore" element={<ExplorePage />} />
               <Route path="/launches" element={<LaunchPage />} />
               <Route path="/mars" element={<MarsPage />} />
               <Route path="/mars/sol/:solId" element={<SolViewer />} />
+              <Route path="/explore" element={<ExplorePage />} />
               <Route path="/solarsim" element={<SolarSimPage />} />
 
               <Route

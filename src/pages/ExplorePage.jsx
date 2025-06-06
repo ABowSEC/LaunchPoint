@@ -43,7 +43,7 @@ export default function ExplorePage() {
 
             <Timeline />  {/* Embedded timeline component here */}
 
-            {/* Optionally add filters or search above it */}
+            {/* need filters or search */}
         </Container>
       </VStack>
     </Container>

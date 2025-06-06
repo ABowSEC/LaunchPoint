@@ -23,6 +23,7 @@ import MarsPage from './pages/MarsPage';
 import SolViewer from './pages/SolViewer';
 import ExplorePage from './pages/ExplorePage';
 import SolarSimPage from './pages/SolarSimPage';
+import ISSLivePage from './pages/issLive';
 import ChatBotDrawer from './components/ChatBotDrawer';
 
 const navigationItems = [
@@ -31,6 +32,7 @@ const navigationItems = [
   { path: '/mars', label: 'Mars Photos' },
   { path: '/explore', label: 'Explore' },
   { path: '/solarsim', label: 'Solar System' },
+  { path: '/iss', label: 'ISS Viewport'}
 ];
 
 function Navigation() {
@@ -73,10 +75,11 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<ExplorePage />} />
               <Route path="/launches" element={<LaunchPage />} />
               <Route path="/mars" element={<MarsPage />} />
               <Route path="/mars/sol/:solId" element={<SolViewer />} />
-              <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/iss" element={<ISSLivePage />} />
               <Route path="/solarsim" element={<SolarSimPage />} />
 
               <Route

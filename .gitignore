@@ -1,26 +1,38 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Node-related
+node_modules/
+dist/
+build/
+.vite/
 
+# Env files
 .env
+.env.local
+.env.*.local
 
-node_modules
-dist
-dist-ssr
-*.local
+# OS-specific
+.DS_Store         # macOS
+Thumbs.db         # Windows
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Editor-specific
+.vscode/
+.idea/
+*.log
+*.swp
+*.swo
+
+# TypeScript/JS build artifacts (if used)
+*.tsbuildinfo
+
+# Coverage/test/output folders
+coverage/
+test-output/
+*.log
+
+# Image cache or user-uploaded temp data
+public/uploads/
+temp/
+
+# Misc
+*.bak
+*.tmp
+*.orig

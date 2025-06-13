@@ -26,47 +26,63 @@ export default function ChatBotDrawer() {
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+  if (!input.trim()) return;
 
-    const userMessage = { role: "user", content: input };
-    const updatedMessages = [...messages,userMessage];
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
+  const userMessage = { role: "user", content: input };
+  const updatedMessages = [
+    { role: "system", content: "You are HALP-9000, a calm, intelligent, and slightly unsettling AI assistant aboard a deep space mission. Respond with clinical precision and calm demeanor, like HAL 9000 from 2001: A Space Odyssey." },
+    ...messages,
+    userMessage
+  ];
 
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: updatedMessages
-        })
-      });
+  setMessages((prev) => [...prev, userMessage]);
+  setInput("");
+  setLoading(true);
 
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message;
-     
-      if (reply) {
-        setMessages((prev) => [...prev, reply]);
-      }   else {
-        setMessages((prev) => [...prev, {
+  try {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) throw new Error("Missing OpenAI API Key in .env");
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: updatedMessages
+      })
+    });
+
+    const data = await res.json();
+    console.log("OpenAI response:", data);
+
+    const reply = data.choices?.[0]?.message;
+    if (reply) {
+      setMessages((prev) => [...prev, reply]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        {
           role: "assistant",
-          content: "Hmm, no reply received."
-        }]);
-      }
-    } catch (err) {
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: "There was an error contacting AI."
-      }]);
-    } finally {
-      setLoading(false);
+          content: "I'm afraid I didn't understand that, Commander."
+        }
+      ]);
     }
-  };
+  } catch (err) {
+    console.error("Fetch error:", err);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: "There was an error contacting HALP-9000. Please verify the AI core is online."
+      }
+    ]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

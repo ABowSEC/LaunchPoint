@@ -96,12 +96,12 @@ export default function SolarSystemView() {
 
   // Planet data for the selector
   const planetData = {
-    Mercury: { color: '#8C7853', symbol: '●' },
-    Venus: { color: '#FFC649', symbol: '●' },
-    Earth: { color: '#6B93D6', symbol: '●' },
-    Mars: { color: '#CD5C5C', symbol: '●' },
-    Jupiter: { color: '#D8CA9D', symbol: '●' },
-    Saturn: { color: '#FAD5A5', symbol: '◐' }
+    Mercury: { texture: 'textures/mercury.jpg', symbol: '' },
+    Venus: { texture: 'textures/venus.jpg', symbol: '' },
+    Earth: { texture: 'textures/earth.jpg', symbol: '' },
+    Mars: { texture: 'textures/mars.jpg', symbol: '' },
+    Jupiter: { texture: 'textures/jupiter.jpg', symbol: '' },
+    Saturn: { texture: 'textures/saturn.jpg', symbol: '' }
   };
 
   useEffect(() => {
@@ -134,6 +134,7 @@ export default function SolarSystemView() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setClearColor(0x000011);
     mountRef.current.appendChild(renderer.domElement);
 
@@ -141,21 +142,43 @@ export default function SolarSystemView() {
     controls.enableDamping = true;
     controls.enablePan = false;
 
-    const pointLight = new THREE.PointLight(0xffffff, 1.2);
-    pointLight.position.set(0, 0, 10);
+    const pointLight = new THREE.PointLight(0xffffff,10, 1000);
+    pointLight.position.set(0, 0, 0);
     pointLight.castShadow = true;
+
+    pointLight.shadow.mapSize.width = 1024;
+    pointLight.shadow.mapSize.width = 1024;
     scene.add(pointLight);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+    const ambient = new THREE.AmbientLight(0x404040, 1);
     scene.add(ambient);
 
     const sunGeometry = new THREE.SphereGeometry(4, 64, 64);
-    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFACD });
+    const sunTexture = new THREE.TextureLoader().load("/textures/sun.jpg");
+    const sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture,
+      emissive: new THREE.Color(0xffaa00),
+      emissiveMap: sunTexture,
+      emissiveIntensity: 2,
+      shininess: 10
+     });
     const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+    sunMesh.castShadow = false;
+    sunMesh.receiveShadow = false;
     scene.add(sunMesh);
+     
+    //SUNGLOW VFX
+    /*const glowGeometry = new THREE.SphereGeometry(6, 64, 64); // slightly larger than sun
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.BackSide, // render from inside
+      depthWrite: false
+    });
+    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+    scene.add(glowMesh);*/
 
     const solarSystem = new THREE.Group();
-
     const planetObjects = {};
 
     const createOrbitEllipse = (radiusX, radiusZ) => {
@@ -178,12 +201,12 @@ export default function SolarSystemView() {
     };
 
     const planets = [
-      createPlanetSystem(new Planet(0.7, 0, "/mercury.jpg"), 6, 5, "Mercury"),
-      createPlanetSystem(new Planet(1, 0, "/venus.jpg"), 9, 8, "Venus"),
-      createPlanetSystem(new Planet(1.2, 0, "/earth.jpg"), 12, 10, "Earth"),
-      createPlanetSystem(new Planet(1, 0, "/mars.jpg"), 15, 13, "Mars"),
-      createPlanetSystem(new Planet(2, 0, "/jupiter.jpg"), 20, 18, "Jupiter"),
-      createPlanetSystem(new Planet(1.8, 0, "/saturn.jpg"), 25, 23, "Saturn")
+      createPlanetSystem(new Planet(0.7, 0, "textures/mercury.jpg"), 6, 5, "Mercury"),
+      createPlanetSystem(new Planet(1, 0, "textures/venus.jpg"), 9, 8, "Venus"),
+      createPlanetSystem(new Planet(1.2, 0, "textures/earth.jpg"), 12, 10, "Earth"),
+      createPlanetSystem(new Planet(1, 0, "textures/mars.jpg"), 15, 13, "Mars"),
+      createPlanetSystem(new Planet(2, 0, "textures/jupiter.jpg"), 20, 18, "Jupiter"),
+      createPlanetSystem(new Planet(1.8, 0, "textures/saturn.jpg"), 25, 23, "Saturn")
     ];
 
     planets.forEach(p => solarSystem.add(p.group));
@@ -309,12 +332,15 @@ export default function SolarSystemView() {
                 w="40px"
                 h="40px"
                 borderRadius="50%"
-                bg={`radial-gradient(circle at 30% 30%, ${data.color}, ${data.color}AA)`}
-                mx="auto"
-                mb={3}
-                boxShadow={`0 4px 15px ${data.color}44`}
+                backgroundImage={`url(${data.texture})`}
+                backgroundSize="cover"
+                backgroundPosition = "center"
+                boxShadow="0 4px 10px rgba(0, 0, 0, 0.4)"
                 border="2px solid"
                 borderColor="whiteAlpha.300"
+                filter = "brightness(1.1) contrast(1.2)"
+                mx = "auto"
+                mb={3}
               />
               
               {/* Planet name */}
@@ -339,7 +365,7 @@ export default function SolarSystemView() {
                   color="blue.400"
                   fontWeight="bold"
                 >
-                  ● FOCUSED
+                   FOCUSED
                 </Text>
               )}
             </Box>
@@ -361,7 +387,7 @@ export default function SolarSystemView() {
             }}
             transition="all 0.3s ease"
           >
-            ⭐ View All Planets
+             View All Planets
           </Button>
         </Flex>
       </Box>

@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Input, VStack, Container } from "@chakra-ui/react";
+import { Box, Heading, Text, Input, VStack, Container, useColorModeValue } from "@chakra-ui/react";
 import { useState } from "react";
 import Timeline from "../components/Timeline";
 
@@ -26,7 +26,7 @@ export default function ExplorePage() {
             size="lg"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            bg="white"
+            bg= {useColorModeValue("white","gray.700")}
             borderRadius="md"
             boxShadow="md"
           />
@@ -35,7 +35,7 @@ export default function ExplorePage() {
         {/* Placeholder for future search/filter results */}
         <Box mt={6}>
           <Text color="gray.500" fontStyle="italic">
-            Feature under construction — soon you'll be able to search for images, missions, and events.
+            Feature under construction//soon you'll be able to search for images, missions, and events.
           </Text>
         </Box>
 
@@ -46,13 +46,13 @@ export default function ExplorePage() {
           </Heading>
 
           <Text fontSize="lg" mb={8}>
-            Dive into NASA’s legacy—from early Apollo missions to modern Mars exploration.
+            Dive into NASA's legacy! Early Apollo missions to modern Mars exploration.
             Click any mission for reports or media.
           </Text>
 
           <Timeline /> {/* Embedded animated mission timeline */}
 
-          {/* You may later add category filters or search for timeline items */}
+          {/*  add category filters or search for timeline items */}
         </Container>
       </VStack>
     </Container>

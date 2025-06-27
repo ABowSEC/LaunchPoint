@@ -53,9 +53,6 @@ export default function SolViewer() {
       {/* Breadcrumb navigation */}
       <Breadcrumb mb={6} fontSize="sm">
         <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
           <BreadcrumbLink href="/mars">Mars</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem isCurrentPage>

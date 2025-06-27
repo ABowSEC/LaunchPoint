@@ -44,9 +44,9 @@ export default function Home() {
 
   // Static stats for the lower cards
   const [stats] = useState({
-    totalImages: 8847,
-    dailyVisitors: 12543,
-    spaceEvents: 47,
+    totalImages: "Over 10,000",
+    dailyVisitors: "DNE",
+    spaceEvents: "DNE",
   });
 
   // Fetch NASA APOD data on page load

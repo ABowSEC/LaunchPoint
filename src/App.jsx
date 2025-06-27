@@ -86,7 +86,7 @@ function LoadingFallback() {
 function App() {
   return (
     <Router>
-      <Box minH="100vh" bg="gray.50">
+      <Box minH="100vh" bg={useColorModeValue('gray.50','gray.900')}>
         <Navigation /> {/* Top nav bar */}
         <Container maxW="6xl" py={10} as="main">
           <Suspense fallback={<LoadingFallback />}>

@@ -7,10 +7,20 @@ import {
   HStack,
   Icon,
   Divider,
-  Badge
+  Badge,
+  useColorModeValue
 } from "@chakra-ui/react";
 import { StarIcon } from "@chakra-ui/icons";
 import LaunchFeed from "../components/LaunchFeed";
+
+
+//rotating ICON wanting to be implemnted 
+export const IconWithReactIcon = () => (
+  <Icon size="lg" color="tomato">
+    <Md3dRotation />
+  </Icon>
+)
+
 
 // Main page to display upcoming NASA and space agency launches
 export default function LaunchPage() {
@@ -26,6 +36,7 @@ export default function LaunchPage() {
               <Heading as="h1" size="2xl" color="blue.600">
                 Launch Tracker
               </Heading>
+              <Icon as={StarIcon} w={8} h={8} color="blue.500" />
             </HStack>
 
             {/* Subtitle description */}
@@ -64,7 +75,7 @@ export default function LaunchPage() {
               <Heading 
                 as="h2" 
                 size="lg" 
-                color="gray.800" 
+                color = {useColorModeValue("gray.700","gray.200")}
                 mb={2}
                 textAlign={{ base: "center", md: "left" }}
               >
@@ -112,13 +123,13 @@ export default function LaunchPage() {
 
         {/* ================= Footer / Status Note ================= */}
         <Box 
-          bg="gray.50" 
+          bg="gray.300" 
           p={4} 
-          borderRadius="md" 
+          borderRadius="sm" 
           textAlign="center"
         >
           <Text fontSize="sm" color="gray.600">
-            Data refreshed automatically • Last updated: {new Date().toLocaleTimeString()}
+             Last updated: {new Date().toLocaleTimeString()}
           </Text>
         </Box>
       </VStack>

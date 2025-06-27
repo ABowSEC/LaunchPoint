@@ -12,6 +12,7 @@ import {
   useColorModeValue
 } from "@chakra-ui/react";
 
+// Embeds YouTube ISS live stream in an iframe
 function ISSVideoFeed() {
   return (
     <Box
@@ -29,10 +30,12 @@ function ISSVideoFeed() {
   );
 }
 
+// Main component for the ISS Live View page
 export default function ISSLivePage() {
-  const [issData, setIssData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [issData, setIssData] = useState(null); // Holds real-time ISS telemetry data
+  const [loading, setLoading] = useState(true); // Controls loading state
 
+  // Fetches ISS position data from public API
   useEffect(() => {
     const fetchISS = async () => {
       try {
@@ -44,13 +47,16 @@ export default function ISSLivePage() {
         console.error("Failed to fetch ISS data", err);
       }
     };
-    fetchISS();
-    const interval = setInterval(fetchISS, 5000);
-    return () => clearInterval(interval);
+
+    fetchISS(); // Initial fetch on page load
+    const interval = setInterval(fetchISS, 5000); // Update data every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on unmount
   }, []);
 
   return (
     <Box px={8} py={10} maxW="6xl" mx="auto">
+      {/* Page Title and Description */}
       <Heading size="xl" textAlign="center" mb={6}>
         International Space Station — Live Feed & Telemetry
       </Heading>
@@ -58,16 +64,23 @@ export default function ISSLivePage() {
         Watch the ISS live and track real-time stats such as its altitude, speed, and coordinates.
       </Text>
 
+      {/* Live Video Feed */}
       <ISSVideoFeed />
 
+      {/* Real-Time Stats */}
       <Box mt={10}>
         <Heading size="md" mb={4}>
           Real-Time ISS Telemetry
         </Heading>
+
         {loading || !issData ? (
           <Spinner size="xl" color="teal.500" />
         ) : (
-          <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={6}>
+          <Grid
+            templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
+            gap={6}
+          >
+            {/* Each stat below shows a live value */}
             <GridItem>
               <Stat>
                 <StatLabel>Latitude</StatLabel>

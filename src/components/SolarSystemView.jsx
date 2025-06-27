@@ -1,6 +1,8 @@
+
+
 import { useEffect, useRef, useState } from "react";
 import { Box, Flex, Text, Button, HStack, VStack } from "@chakra-ui/react";
-import * as THREE from "three";
+import * as THREE from "three";//3d Lib
 import Planet from "./Planet";
 
 class OrbitControls {
@@ -27,10 +29,12 @@ class OrbitControls {
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onWheel = this.onWheel.bind(this);
     
+    //Mouse Listeners for orbit rotation
     this.domElement.addEventListener('mousedown', this.onMouseDown);
     this.domElement.addEventListener('wheel', this.onWheel);
   }
   
+  //drag starts
   onMouseDown(event) {
     this.isMouseDown = true;
     this.rotateStart.set(event.clientX, event.clientY);
@@ -38,6 +42,7 @@ class OrbitControls {
     document.addEventListener('mouseup', this.onMouseUp);
   }
   
+  //rotate cam
   onMouseMove(event) {
     if (!this.isMouseDown) return;
     
@@ -49,13 +54,13 @@ class OrbitControls {
     
     this.rotateStart.copy(this.rotateEnd);
   }
-  
+  // stop
   onMouseUp() {
     this.isMouseDown = false;
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
   }
-  
+  //zoom FIX Needs to stop borwser scroll 
   onWheel(event) {
     if (event.deltaY < 0) {
       this.scale *= 0.95;
@@ -64,6 +69,7 @@ class OrbitControls {
     }
   }
   
+  //call each frame 
   update() {
     const offset = new THREE.Vector3();
     offset.copy(this.camera.position).sub(this.target);
@@ -91,10 +97,10 @@ class OrbitControls {
 }
 
 export default function SolarSystemView() {
-  const mountRef = useRef(null);
-  const [focusedPlanet, setFocusedPlanet] = useState(null);
+  const mountRef = useRef(null); //3D canvas mount Ref
+  const [focusedPlanet, setFocusedPlanet] = useState(null); //current focus
 
-  // Planet data for the selector
+  // Planet data for the selector of Planet ICONS
   const planetData = {
     Mercury: { texture: 'textures/mercury.jpg', symbol: '' },
     Venus: { texture: 'textures/venus.jpg', symbol: '' },
@@ -104,6 +110,8 @@ export default function SolarSystemView() {
     Saturn: { texture: 'textures/saturn.jpg', symbol: '' }
   };
 
+  //only afrer mount
+  //STARFIELD created with points
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -189,6 +197,7 @@ export default function SolarSystemView() {
       return new THREE.Line(geometry, material);
     };
 
+    //mesh for planets inserted here
     const createPlanetSystem = (planetData, orbitRadiusX, orbitRadiusZ, name) => {
       const group = new THREE.Group();
       const mesh = planetData.getMesh();
@@ -200,6 +209,7 @@ export default function SolarSystemView() {
       return { group, mesh };
     };
 
+    //"realistic" orbit distance needs better scale
     const planets = [
       createPlanetSystem(new Planet(0.7, 0, "textures/mercury.jpg"), 6, 5, "Mercury"),
       createPlanetSystem(new Planet(1, 0, "textures/venus.jpg"), 9, 8, "Venus"),
@@ -226,7 +236,7 @@ export default function SolarSystemView() {
         );
         p.mesh.rotation.y += 0.02;
       });
-
+      //awkward stutters?
       if (focusedPlanet && planetObjects[focusedPlanet]) {
         const target = planetObjects[focusedPlanet].mesh;
         controls.target.lerp(target.position, 0.05);
@@ -262,7 +272,7 @@ export default function SolarSystemView() {
     <VStack spacing={6} w="100%" h="100vh">
       {/* 3D Solar System Viewer */}
       <Box
-        ref={mountRef}
+        ref={mountRef} // container for Threejs renerer mounting
         w="100%"
         h="70vh"
         bg="gray.900"
@@ -273,7 +283,7 @@ export default function SolarSystemView() {
         borderColor="whiteAlpha.200"
       />
 
-      {/* Planet Selector Section */}
+      {/* Planet Selector Section for ICONS*/}
       <Box
         w="100%"
         bg="linear-gradient(135deg, rgba(26, 32, 44, 0.95), rgba(45, 55, 72, 0.95))"

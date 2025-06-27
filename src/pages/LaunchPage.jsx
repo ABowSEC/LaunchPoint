@@ -12,24 +12,23 @@ import {
 import { StarIcon } from "@chakra-ui/icons";
 import LaunchFeed from "../components/LaunchFeed";
 
+// Main page to display upcoming NASA and space agency launches
 export default function LaunchPage() {
   return (
     <Container maxW="8xl" py={8}>
       <VStack spacing={8} align="stretch">
-        {/* Header Section */}
+        {/* ================= Header Section ================= */}
         <Box textAlign="center">
           <VStack spacing={4}>
+            {/* Title with icon */}
             <HStack justify="center" spacing={3}>
               <Icon as={StarIcon} w={8} h={8} color="blue.500" />
-              <Heading 
-                as="h1" 
-                size="2xl" 
-                color="blue.600"
-              >
+              <Heading as="h1" size="2xl" color="blue.600">
                 Launch Tracker
               </Heading>
             </HStack>
-            
+
+            {/* Subtitle description */}
             <Text 
               fontSize="lg" 
               color="gray.600" 
@@ -40,7 +39,8 @@ export default function LaunchPage() {
               Stay up-to-date with upcoming NASA launches, missions, and space exploration events. 
               Track launch schedules, mission details, and launch windows in real-time.
             </Text>
-            
+
+            {/* Badges for key features */}
             <HStack spacing={4} mt={4}>
               <Badge colorScheme="blue" variant="outline" fontSize="sm" px={3} py={1}>
                 Live Updates
@@ -53,11 +53,11 @@ export default function LaunchPage() {
               </Badge>
             </HStack>
           </VStack>
-          
+
           <Divider mt={8} borderColor="blue.200" />
         </Box>
 
-        {/* Launch Feed Section */}
+        {/* ================= Launch Feed Section ================= */}
         <Box>
           <VStack spacing={6} align="stretch">
             <Box>
@@ -78,12 +78,13 @@ export default function LaunchPage() {
                 Latest information from NASA's launch schedule
               </Text>
             </Box>
-            
+
+            {/* LaunchFeed dynamically renders next 5 upcoming launches */}
             <LaunchFeed />
           </VStack>
         </Box>
 
-        {/* Info Section */}
+        {/* ================= Informational Section ================= */}
         <Box 
           bg="blue.50" 
           p={6} 
@@ -109,7 +110,7 @@ export default function LaunchPage() {
           </VStack>
         </Box>
 
-        {/* Quick Stats or Status (Optional - can be populated by LaunchFeed) */}
+        {/* ================= Footer / Status Note ================= */}
         <Box 
           bg="gray.50" 
           p={4} 

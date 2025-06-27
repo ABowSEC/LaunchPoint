@@ -1,3 +1,4 @@
+// Core React and Router imports
 import {
   BrowserRouter as Router,
   Routes,
@@ -5,6 +6,8 @@ import {
   Link as RouterLink,
   useLocation,
 } from 'react-router-dom';
+
+// Chakra UI components for layout and styling
 import {
   Box,
   Flex,
@@ -14,9 +17,15 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { Suspense, lazy } from 'react';
-import { ColorModeButton } from './components/ui/color-mode';
 
+// React lazy loading and suspense fallback
+import { Suspense, lazy } from 'react';
+
+// Custom UI components
+import { ColorModeButton } from './components/ui/color-mode';
+import ChatBotDrawer from './components/ChatBotDrawer';
+
+// Page components
 import Home from './pages/Home';
 import LaunchPage from './pages/LaunchPage';
 import MarsPage from './pages/MarsPage';
@@ -24,56 +33,65 @@ import SolViewer from './pages/SolViewer';
 import ExplorePage from './pages/ExplorePage';
 import SolarSimPage from './pages/SolarSimPage';
 import ISSLivePage from './pages/issLive';
-import ChatBotDrawer from './components/ChatBotDrawer';
 
+// Navigation menu config
 const navigationItems = [
   { path: '/', label: 'Home', isHome: true },
   { path: '/launches', label: 'Launch Tracker' },
   { path: '/mars', label: 'Mars Photos' },
   { path: '/explore', label: 'Explore' },
   { path: '/solarsim', label: 'Solar System' },
-  { path: '/iss', label: 'ISS Viewport'}
+  { path: '/iss', label: 'ISS Viewport' }
 ];
 
+// Component to render the top navigation bar
 function Navigation() {
-  const location = useLocation();
+  const location = useLocation(); // Used to highlight the active nav link
 
   return (
     <Box as="header" bg={useColorModeValue('gray.800', 'gray.900')} px={4} py={3}>
       <Container maxW="6xl">
         <Flex as="nav" align="center" gap={6}>
+          {/* Loop through navigation items and render links */}
           {navigationItems.map(({ path, label }) => (
             <Link
               key={path}
               as={RouterLink}
               to={path}
               fontWeight={location.pathname === path ? 'bold' : 'medium'}
-              color={location.pathname === path ? 'teal.400' : useColorModeValue('whiteAlpha.900', 'white')}
+              color={
+                location.pathname === path
+                  ? 'teal.400'
+                  : useColorModeValue('whiteAlpha.900', 'white')
+              }
             >
               {label}
             </Link>
           ))}
           <Spacer />
-          <ColorModeButton />
-          <ChatBotDrawer />
+          <ColorModeButton /> {/* Toggle light/dark mode */}
+          <ChatBotDrawer />   {/* Chat assistant button */}
         </Flex>
       </Container>
     </Box>
   );
 }
 
+// Fallback component shown while lazy-loaded pages are loading
 function LoadingFallback() {
   return <Text>Loading...</Text>;
 }
 
+// Main App component
 function App() {
   return (
     <Router>
       <Box minH="100vh" bg="gray.50">
-        <Navigation />
+        <Navigation /> {/* Top nav bar */}
         <Container maxW="6xl" py={10} as="main">
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
+              {/* Define application routes and page components */}
               <Route path="/" element={<Home />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/launches" element={<LaunchPage />} />
@@ -82,6 +100,7 @@ function App() {
               <Route path="/iss" element={<ISSLivePage />} />
               <Route path="/solarsim" element={<SolarSimPage />} />
 
+              {/* Fallback route for unknown paths */}
               <Route
                 path="*"
                 element={

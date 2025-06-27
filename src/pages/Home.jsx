@@ -28,42 +28,43 @@ import {
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
 
+// Main Home page component
 export default function Home() {
-  const [apod, setApod] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showFullDescription, setShowFullDescription] = useState(false);
-  const [viewCount, setViewCount] = useState(0);
+  // APOD = Astronomy Picture of the Day
+  const [apod, setApod] = useState(null);                 // Holds NASA APOD data
+  const [loading, setLoading] = useState(true);          // Controls loading spinner
+  const [error, setError] = useState(null);              // Holds fetch errors
+  const [showFullDescription, setShowFullDescription] = useState(false); // Toggle for APOD text
+  const [viewCount, setViewCount] = useState(0);         // Fake view count for APOD
 
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode } = useColorMode(); // Dark/light mode toggle
   const bg = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("gray.700", "gray.300");
 
+  // Static stats for the lower cards
   const [stats] = useState({
     totalImages: 8847,
     dailyVisitors: 12543,
     spaceEvents: 47,
   });
 
+  // Fetch NASA APOD data on page load
   useEffect(() => {
     const fetchAPOD = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const apiKey = import.meta.env.VITE_NASA_API_KEY;
         const res = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         );
 
-        if (!res.ok) {
-          throw new Error(`Failed to fetch APOD: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Failed to fetch APOD: ${res.status}`);
 
         const data = await res.json();
         setApod(data);
-        setViewCount(Math.floor(Math.random() * 5000) + 1000);
+        setViewCount(Math.floor(Math.random() * 5000) + 1000); // Simulated views
       } catch (err) {
         setError(err.message);
       } finally {
@@ -74,8 +75,11 @@ export default function Home() {
     fetchAPOD();
   }, []);
 
-  const toggleDescription = () => setShowFullDescription((prev) => !prev);
+  // Expand/collapse description toggle
+  const toggleDescription = () =>
+    setShowFullDescription((prev) => !prev);
 
+  // Render the APOD card content based on state
   const renderAPODContent = () => {
     if (loading) {
       return (
@@ -103,7 +107,9 @@ export default function Home() {
     const isVideo = apod.media_type === "video";
     const description = apod.explanation || "";
     const shouldTruncate = description.length > 200;
-    const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 200)}...`;
+    const displayDescription = showFullDescription || !shouldTruncate
+      ? description
+      : `${description.slice(0, 200)}...`;
 
     return (
       <VStack spacing={8}>
@@ -113,10 +119,18 @@ export default function Home() {
               <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
             </AspectRatio>
           ) : (
-            <Image src={apod.url} alt={apod.title} rounded="md" maxH="500px" objectFit="cover" fallbackSrc="https://via.placeholder.com/800x600?text=Image+Unavailable" />
+            <Image
+              src={apod.url}
+              alt={apod.title}
+              rounded="md"
+              maxH="500px"
+              objectFit="cover"
+              fallbackSrc="https://via.placeholder.com/800x600?text=Image+Unavailable"
+            />
           )}
         </Box>
 
+        {/* Text + metadata section */}
         <VStack spacing={4} textAlign="center">
           <Heading size="lg">{apod.title}</Heading>
 
@@ -137,7 +151,13 @@ export default function Home() {
           </Text>
 
           {shouldTruncate && (
-            <Button variant="link" colorScheme="teal" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
+            <Button
+              variant="link"
+              colorScheme="teal"
+              size="sm"
+              onClick={toggleDescription}
+              rightIcon={<ExternalLinkIcon />}
+            >
               {showFullDescription ? "Show Less" : "Read More"}
             </Button>
           )}
@@ -155,6 +175,7 @@ export default function Home() {
   return (
     <Box bg={bg} minH="100vh" py={16} px={6}>
       <Container maxW="7xl">
+        {/* Theme toggle button */}
         <HStack justify="space-between" mb={6}>
           <Box />
           <IconButton
@@ -165,6 +186,7 @@ export default function Home() {
           />
         </HStack>
 
+        {/* Welcome Section */}
         <VStack spacing={10} textAlign="center">
           <Heading size="2xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
             Welcome to LaunchPoint
@@ -184,10 +206,12 @@ export default function Home() {
 
         <Divider my={12} />
 
+        {/* APOD Feature Section */}
         <Box>{renderAPODContent()}</Box>
 
         <Divider my={12} />
 
+        {/* Stats Section */}
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
           <Box bg={cardBg} p={6} rounded="xl" shadow="md" textAlign="center">
             <Text fontSize="lg" mb={2} color={textColor}>Total Images</Text>

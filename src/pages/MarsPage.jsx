@@ -16,16 +16,20 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
+// MarsPage allows the user to choose a Martian sol (day) from the Curiosity rover's photo log
 export default function MarsPage() {
-  const [availableSols, setAvailableSols] = useState([]);
-  const [sol, setSol] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [availableSols, setAvailableSols] = useState([]); // List of sols with available photos
+  const [sol, setSol] = useState(null);                   // Currently selected sol
+  const [loading, setLoading] = useState(true);           // Loading state for the manifest
 
+  const navigate = useNavigate(); // Router navigation hook
+
+  // Color theme-aware values
   const textColor = useColorModeValue("gray.700", "gray.300");
   const subTextColor = useColorModeValue("gray.600", "gray.400");
   const dividerColor = useColorModeValue("red.200", "red.500");
 
+  // Fetch list of sols with photos when the page loads
   useEffect(() => {
     const fetchManifest = async () => {
       try {
@@ -33,9 +37,11 @@ export default function MarsPage() {
         const url = `https://api.nasa.gov/mars-photos/api/v1/manifests/curiosity?api_key=${apiKey}`;
         const res = await fetch(url);
         const data = await res.json();
+        
+        // Extract only the sol numbers that have photos
         const solsWithPhotos = data.photo_manifest.photos.map((entry) => entry.sol);
         setAvailableSols(solsWithPhotos);
-        setSol(solsWithPhotos[0]); // default to first valid sol
+        setSol(solsWithPhotos[0]); // Default to first sol available
       } catch (err) {
         console.error("Error fetching manifest:", err);
       } finally {
@@ -46,14 +52,16 @@ export default function MarsPage() {
     fetchManifest();
   }, []);
 
+  // Handle sol selection from dropdown
   const handleSelect = (e) => {
     const selected = e.target.value;
     setSol(selected);
-    navigate(`/mars/sol/${selected}`);
+    navigate(`/mars/sol/${selected}`); // Redirect to SolViewer page
   };
 
   return (
     <Container maxW="8xl" py={8}>
+      {/* Breadcrumb for navigation context */}
       <Breadcrumb mb={6} fontSize="sm" color={subTextColor}>
         <BreadcrumbItem>
           <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -63,25 +71,32 @@ export default function MarsPage() {
         </BreadcrumbItem>
       </Breadcrumb>
 
+      {/* Main page content */}
       <VStack spacing={8} align="stretch">
+        {/* Page heading */}
         <Box textAlign="center">
           <Heading as="h1" size="2xl" color="red.600">
             Mars Rover Photos
           </Heading>
+
           <Badge colorScheme="red" variant="outline" fontSize="md" px={3} py={1}>
             Choose a Sol with Photos
           </Badge>
+
           <Text fontSize="lg" color={subTextColor} maxW="600px" mx="auto" mt={4}>
             Select a Martian day where NASA’s Curiosity rover captured photos.
           </Text>
+
           <Divider mt={6} borderColor={dividerColor} />
         </Box>
 
+        {/* Dropdown for selecting sol */}
         <Box w="100%" maxW="400px" mx="auto">
           <Heading size="md" textAlign="center" mb={2} color={textColor}>
             Available Sols
           </Heading>
 
+          {/* Show spinner while loading sols */}
           {loading ? (
             <Spinner size="lg" />
           ) : (

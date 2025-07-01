@@ -28,6 +28,9 @@ import {
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
 import RotatingText from "../components/RotatingText";
+import Zoom from 'react-medium-image-zoom'
+
+
 
 // Main Home page component
 export default function Home() {
@@ -114,20 +117,23 @@ export default function Home() {
 
     return (
       <VStack spacing={8}>
-        <Box bg={cardBg} p={6} rounded="xl" shadow="lg">
+        <Box bg={cardBg} p={6} rounded="xl" shadow="lg" height="auto" overflow="hidden">
           {isVideo ? (
             <AspectRatio ratio={16 / 9}>
               <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
             </AspectRatio>
           ) : (
-            <Image
-              src={apod.url}
-              alt={apod.title}
-              rounded="md"
-              maxH="500px"
-              objectFit="cover"
-              fallbackSrc="https://via.placeholder.com/800x600?text=Image+Unavailable"
+            <Zoom>
+              <Image
+                src={apod.url}
+                alt={apod.title}
+                rounded="md"
+                maxH="500px"
+                objectFit="cover"
+                cursor="zoom-in"
+                //fallbackSrc=""
             />
+            </Zoom>
           )}
         </Box>
 

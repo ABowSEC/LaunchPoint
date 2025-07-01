@@ -27,6 +27,7 @@ import {
   ArrowForwardIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
+import RotatingText from "../components/RotatingText";
 
 // Main Home page component
 export default function Home() {
@@ -187,13 +188,37 @@ export default function Home() {
         </HStack>
 
         {/* Welcome Section */}
-        <VStack spacing={10} textAlign="center">
+        <VStack spacing={6} textAlign="center">
           <Heading size="2xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
             Welcome to LaunchPoint
           </Heading>
-          <Text fontSize="xl" color={textColor} maxW="600px">
-            Explore the universe — powered by NASA data
+          <HStack spacing={2} align="baseline" mb={2}>
+          <Text fontSize="2xl" color={textColor} maxW="600px">
+            Explore  
           </Text>
+          <Box
+            as={Badge}
+            bg="cyan.300"
+            color="black"
+            px={7}
+            py={2}
+            borderRadius={"lg"}
+            overflow={"hidden"}
+            >
+            <RotatingText
+              texts={["Planets", "The Stars", "Launches", "Our Universe"]}
+              splitBy="words"         //swaps whole words nor chars
+              staggerFrom={"first"}  //last first
+              staggerDuration={.35} //400 ms per word entry
+
+              initial={{ y:"100%"}}
+              animate={{ y:0 }}
+              exit={{ y:"-120%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 400 }}
+              rotationInterval={2500}
+            />
+          </Box>
+          </HStack>
           <HStack spacing={4}>
             <Button as={RouterLink} to="/explore" colorScheme="teal" size="lg">
               Start Exploring

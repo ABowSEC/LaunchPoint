@@ -21,6 +21,10 @@ import {
 // React lazy loading and suspense fallback
 import { Suspense, lazy } from 'react';
 
+//ReactBits
+import  RotatingText  from './components/RotatingText'
+
+
 // Custom UI components
 import { ColorModeButton } from './components/ui/color-mode';
 import ChatBotDrawer from './components/ChatBotDrawer';

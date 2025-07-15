@@ -10,7 +10,6 @@ import {
   Image,
   IconButton,
   useColorMode,
-  useColorModeValue,
   SimpleGrid,
   Divider,
   Link,
@@ -36,14 +35,11 @@ export default function Home() {
   const [viewCount, setViewCount] = useState(0);
 
   const { colorMode, toggleColorMode } = useColorMode();
-  const bg = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.700");
-  const textColor = useColorModeValue("gray.700", "gray.300");
 
   const [stats] = useState({
-    totalImages: 8847,
-    dailyVisitors: 12543,
-    spaceEvents: 47,
+    totalImages: 0,
+    dailyVisitors: 0,
+    spaceEvents: 0,
   });
 
   useEffect(() => {
@@ -80,8 +76,8 @@ export default function Home() {
     if (loading) {
       return (
         <VStack spacing={4} py={10}>
-          <Spinner size="xl" color="teal.500" thickness="4px" />
-          <Text color="gray.500">Loading today's cosmic wonder...</Text>
+          <Spinner size="xl" color="brand.primary" thickness="4px" />
+          <Text color="text.secondary">Loading today's cosmic wonder...</Text>
         </VStack>
       );
     }
@@ -107,7 +103,7 @@ export default function Home() {
 
     return (
       <VStack spacing={8}>
-        <Box bg={cardBg} p={6} rounded="xl" shadow="lg">
+        <Box bg="bg.card" p={6} rounded="xl" shadow="lg">
           {isVideo ? (
             <AspectRatio ratio={16 / 9}>
               <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
@@ -132,7 +128,7 @@ export default function Home() {
             </Badge>
           </HStack>
 
-          <Text fontSize="md" maxW="3xl" color={textColor}>
+          <Text fontSize="md" maxW="3xl" color="text.primary">
             {displayDescription}
           </Text>
 
@@ -143,7 +139,7 @@ export default function Home() {
           )}
 
           {apod.copyright && (
-            <Text fontSize="sm" color="gray.500" fontStyle="italic">
+            <Text fontSize="sm" color="text.secondary" fontStyle="italic">
               © {apod.copyright}
             </Text>
           )}
@@ -153,7 +149,7 @@ export default function Home() {
   };
 
   return (
-    <Box bg={bg} minH="100vh" py={16} px={6}>
+    <Box bg="bg.body" minH="100vh" py={16} px={6}>
       <Container maxW="7xl">
         <HStack justify="space-between" mb={6}>
           <Box />
@@ -169,8 +165,8 @@ export default function Home() {
           <Heading size="2xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
             Welcome to LaunchPoint
           </Heading>
-          <Text fontSize="xl" color={textColor} maxW="600px">
-            Explore the universe — powered by NASA data
+          <Text fontSize="xl" color="text.primary" maxW="600px">
+            Explore the universe *** powered by NASA data
           </Text>
           <HStack spacing={4}>
             <Button as={RouterLink} to="/explore" colorScheme="teal" size="lg">
@@ -189,20 +185,20 @@ export default function Home() {
         <Divider my={12} />
 
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-          <Box bg={cardBg} p={6} rounded="xl" shadow="md" textAlign="center">
-            <Text fontSize="lg" mb={2} color={textColor}>Total Images</Text>
-            <Heading size="xl" color="teal.500">{stats.totalImages.toLocaleString()}</Heading>
-            <Text fontSize="sm" color="gray.500">From NASA's archives</Text>
+          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+            <Text fontSize="lg" mb={2} color="text.primary">Total Images</Text>
+            <Heading size="xl" color="brand.primary">{stats.totalImages.toLocaleString()}</Heading>
+            <Text fontSize="sm" color="text.secondary">From NASA's archives</Text>
           </Box>
-          <Box bg={cardBg} p={6} rounded="xl" shadow="md" textAlign="center">
-            <Text fontSize="lg" mb={2} color={textColor}>Daily Visitors</Text>
-            <Heading size="xl" color="teal.500">{stats.dailyVisitors.toLocaleString()}</Heading>
-            <Text fontSize="sm" color="gray.500">Space enthusiasts worldwide</Text>
+          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+            <Text fontSize="lg" mb={2} color="text.primary">Daily Visitors</Text>
+            <Heading size="xl" color="brand.primary">{stats.dailyVisitors.toLocaleString()}</Heading>
+            <Text fontSize="sm" color="text.secondary">Space enthusiasts worldwide</Text>
           </Box>
-          <Box bg={cardBg} p={6} rounded="xl" shadow="md" textAlign="center">
-            <Text fontSize="lg" mb={2} color={textColor}>Space Events</Text>
-            <Heading size="xl" color="teal.500">{stats.spaceEvents}</Heading>
-            <Text fontSize="sm" color="gray.500">This month</Text>
+          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+            <Text fontSize="lg" mb={2} color="text.primary">Space Events</Text>
+            <Heading size="xl" color="brand.primary">{stats.spaceEvents}</Heading>
+            <Text fontSize="sm" color="text.secondary">This month</Text>
           </Box>
         </SimpleGrid>
       </Container>

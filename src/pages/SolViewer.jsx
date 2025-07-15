@@ -12,19 +12,14 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { motion } from 'framer-motion';//images
-
-
 
 export default function SolViewer() {
   const { solId } = useParams();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const MotionBox = motion(chakra.div);
-
-  const bg = useColorModeValue("gray.100", "gray.700");
 
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -46,7 +41,7 @@ export default function SolViewer() {
   }, [solId]);
 
   return (
-    <Box py={10} px={6}>
+    <Box py={10} px={6} bg="bg.body">
       <Breadcrumb mb={6} fontSize="sm">
         <BreadcrumbItem>
           <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -60,16 +55,16 @@ export default function SolViewer() {
       </Breadcrumb>
 
       <VStack spacing={6}>
-        <Heading color="red.500">Photos from Sol {solId}</Heading>
+        <Heading color="brand.primary">Photos from Sol {solId}</Heading>
 
         {loading ? (
-          <Spinner size="xl" />
+          <Spinner size="xl" color="brand.primary" />
         ) : photos.length > 0 ? (
           <SimpleGrid columns={[1, 2, 3]} spacing={6}>
             {photos.map((photo, index) => (
         <MotionBox
             key={photo.id}
-            bg={bg}
+            bg="bg.card"
             borderRadius="md"
             overflow="hidden"
             initial={{ opacity: 0, y: 20 }}
@@ -78,15 +73,15 @@ export default function SolViewer() {
         >   
             <Image src={photo.img_src} alt="Mars Rover" width="100%" />
             <Box p={4}>
-                <Text fontWeight="bold">{photo.rover.name}</Text>
-                <Text>{photo.camera.full_name}</Text>
-                <Text fontSize="sm">{photo.earth_date}</Text>
+                <Text fontWeight="bold" color="text.primary">{photo.rover.name}</Text>
+                <Text color="text.secondary">{photo.camera.full_name}</Text>
+                <Text fontSize="sm" color="text.secondary">{photo.earth_date}</Text>
             </Box>
         </MotionBox>
             ))}
           </SimpleGrid>
         ) : (
-          <Text>No images found for Sol {solId}</Text>
+          <Text color="text.secondary">No images found for Sol {solId}</Text>
         )}
       </VStack>
     </Box>

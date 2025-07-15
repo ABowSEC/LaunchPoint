@@ -10,7 +10,6 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
-  useColorModeValue,
   Spinner,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
@@ -21,10 +20,6 @@ export default function MarsPage() {
   const [sol, setSol] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  const textColor = useColorModeValue("gray.700", "gray.300");
-  const subTextColor = useColorModeValue("gray.600", "gray.400");
-  const dividerColor = useColorModeValue("red.200", "red.500");
 
   useEffect(() => {
     const fetchManifest = async () => {
@@ -54,7 +49,7 @@ export default function MarsPage() {
 
   return (
     <Container maxW="8xl" py={8}>
-      <Breadcrumb mb={6} fontSize="sm" color={subTextColor}>
+      <Breadcrumb mb={6} fontSize="sm" color="text.secondary">
         <BreadcrumbItem>
           <BreadcrumbLink href="/">Home</BreadcrumbLink>
         </BreadcrumbItem>
@@ -65,20 +60,20 @@ export default function MarsPage() {
 
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading as="h1" size="2xl" color="red.600">
+          <Heading as="h1" size="2xl" color="brand.primary">
             Mars Rover Photos
           </Heading>
           <Badge colorScheme="red" variant="outline" fontSize="md" px={3} py={1}>
             Choose a Sol with Photos
           </Badge>
-          <Text fontSize="lg" color={subTextColor} maxW="600px" mx="auto" mt={4}>
+          <Text fontSize="lg" color="text.secondary" maxW="600px" mx="auto" mt={4}>
             Select a Martian day where NASA’s Curiosity rover captured photos.
           </Text>
-          <Divider mt={6} borderColor={dividerColor} />
+          <Divider mt={6} borderColor="border.default" />
         </Box>
 
         <Box w="100%" maxW="400px" mx="auto">
-          <Heading size="md" textAlign="center" mb={2} color={textColor}>
+          <Heading size="md" textAlign="center" mb={2} color="text.primary">
             Available Sols
           </Heading>
 

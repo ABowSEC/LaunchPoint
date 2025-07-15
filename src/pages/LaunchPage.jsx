@@ -20,11 +20,11 @@ export default function LaunchPage() {
         <Box textAlign="center">
           <VStack spacing={4}>
             <HStack justify="center" spacing={3}>
-              <Icon as={StarIcon} w={8} h={8} color="blue.500" />
+              <Icon as={StarIcon} w={8} h={8} color="brand.primary" />
               <Heading 
                 as="h1" 
                 size="2xl" 
-                color="blue.600"
+                color="brand.primary"
               >
                 Launch Tracker
               </Heading>
@@ -32,7 +32,7 @@ export default function LaunchPage() {
             
             <Text 
               fontSize="lg" 
-              color="gray.600" 
+              color="text.secondary" 
               maxW="700px" 
               textAlign="center"
               lineHeight="1.6"
@@ -54,7 +54,7 @@ export default function LaunchPage() {
             </HStack>
           </VStack>
           
-          <Divider mt={8} borderColor="blue.200" />
+          <Divider mt={8} borderColor="border.default" />
         </Box>
 
         {/* Launch Feed Section */}
@@ -64,14 +64,14 @@ export default function LaunchPage() {
               <Heading 
                 as="h2" 
                 size="lg" 
-                color="gray.800" 
+                color="text.primary" 
                 mb={2}
                 textAlign={{ base: "center", md: "left" }}
               >
                 Upcoming Launches
               </Heading>
               <Text 
-                color="gray.600" 
+                color="text.secondary" 
                 fontSize="md"
                 textAlign={{ base: "center", md: "left" }}
               >
@@ -85,24 +85,24 @@ export default function LaunchPage() {
 
         {/* Info Section */}
         <Box 
-          bg="blue.50" 
+          bg="bg.card" 
           p={6} 
           borderRadius="lg" 
           border="1px solid"
-          borderColor="blue.100"
+          borderColor="border.default"
           mt={8}
         >
           <VStack spacing={4}>
-            <Heading as="h3" size="md" color="blue.700" textAlign="center">
+            <Heading as="h3" size="md" color="brand.primary" textAlign="center">
               About Launch Tracking
             </Heading>
             <VStack spacing={3} textAlign="center">
-              <Text fontSize="sm" color="gray.700" maxW="600px">
+              <Text fontSize="sm" color="text.primary" maxW="600px">
                 Launch times are subject to change due to weather conditions, technical issues, 
                 or range conflicts. We provide the most up-to-date information available from NASA's 
                 official sources.
               </Text>
-              <Text fontSize="xs" color="gray.500" fontStyle="italic">
+              <Text fontSize="xs" color="text.secondary" fontStyle="italic">
                 All times displayed in your local timezone
               </Text>
             </VStack>
@@ -111,12 +111,12 @@ export default function LaunchPage() {
 
         {/* Quick Stats or Status (Optional - can be populated by LaunchFeed) */}
         <Box 
-          bg="gray.50" 
+          bg="bg.card" 
           p={4} 
           borderRadius="md" 
           textAlign="center"
         >
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" color="text.secondary">
             Data refreshed automatically • Last updated: {new Date().toLocaleTimeString()}
           </Text>
         </Box>

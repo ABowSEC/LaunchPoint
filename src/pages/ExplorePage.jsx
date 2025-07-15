@@ -6,11 +6,11 @@ export default function ExplorePage() {
   const [query, setQuery] = useState("");
 
   return (
-    <Container maxW="7xl" py={10}>
+    <Container maxW="7xl" py={10} bg="bg.body">
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading size="2xl" color="teal.500">Explore the Cosmos</Heading>
-          <Text fontSize="lg" color="gray.600">
+          <Heading size="2xl" color="brand.primary">Explore the Cosmos</Heading>
+          <Text fontSize="lg" color="text.secondary">
             Search NASA data, explore missions, and discover celestial events.
           </Text>
         </Box>
@@ -21,7 +21,7 @@ export default function ExplorePage() {
             size="lg"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            bg="white"
+            bg="bg.card"
             borderRadius="md"
             boxShadow="md"
           />
@@ -29,15 +29,15 @@ export default function ExplorePage() {
 
         {/*  search results and filterable categories */}
         <Box mt={6}>
-          <Text color="gray.500" fontStyle="italic">
+          <Text color="text.secondary" fontStyle="italic">
             Feature under construction — soon you'll be able to search for images, missions, and events.
           </Text>
         </Box>
 
         <Container maxW="6xl" py={12}>
-            <Heading size="xl" mb={6}>Explore Missions & Discoveries</Heading>
+            <Heading size="xl" mb={6} color="brand.primary">Explore Missions & Discoveries</Heading>
   
-            <Text fontSize="lg" mb={8}>
+            <Text fontSize="lg" mb={8} color="text.primary">
                 Dive into NASA’s legacy—from early Apollo missions to modern Mars exploration. Click any mission for reports or media.
             </Text>
 
@@ -47,8 +47,5 @@ export default function ExplorePage() {
         </Container>
       </VStack>
     </Container>
-
-    
-
   );
 }

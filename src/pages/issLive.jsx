@@ -8,8 +8,7 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  Spinner,
-  useColorModeValue
+  Spinner
 } from "@chakra-ui/react";
 
 function ISSVideoFeed() {
@@ -50,11 +49,11 @@ export default function ISSLivePage() {
   }, []);
 
   return (
-    <Box px={8} py={10} maxW="6xl" mx="auto">
+    <Box bg="bg.body" px={8} py={10} maxW="6xl" mx="auto">
       <Heading size="xl" textAlign="center" mb={6}>
         International Space Station — Live Feed & Telemetry
       </Heading>
-      <Text fontSize="md" color="gray.500" textAlign="center" mb={10}>
+      <Text fontSize="md" color="text.secondary" textAlign="center" mb={10}>
         Watch the ISS live and track real-time stats such as its altitude, speed, and coordinates.
       </Text>
 
@@ -65,7 +64,7 @@ export default function ISSLivePage() {
           Real-Time ISS Telemetry
         </Heading>
         {loading || !issData ? (
-          <Spinner size="xl" color="teal.500" />
+          <Spinner size="xl" color="brand.primary" />
         ) : (
           <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={6}>
             <GridItem>

@@ -3,13 +3,15 @@ import SolarSystemView from '../components/SolarSystemView';
 
 export default function SolarSimPage() {
   return (
-    <VStack spacing={6} py={10}>
-      <Heading as="h1" size="2xl" color="teal.600">
-        3D Solar System Viewer
-      </Heading>
-      <Box width="100%">
-        <SolarSystemView />
-      </Box>
-    </VStack>
+    <Box bg="bg.body">
+      <VStack spacing={6} py={10}>
+        <Heading as="h1" size="2xl" color="brand.primary">
+          3D Solar System Viewer
+        </Heading>
+        <Box width="100%">
+          <SolarSystemView />
+        </Box>
+      </VStack>
+    </Box>
   );
 }

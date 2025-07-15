@@ -12,7 +12,6 @@ import {
   Spacer,
   Container,
   Text,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { Suspense, lazy } from 'react';
 import { ColorModeButton } from './components/ui/color-mode';
@@ -39,7 +38,7 @@ function Navigation() {
   const location = useLocation();
 
   return (
-    <Box as="header" bg={useColorModeValue('gray.800', 'gray.900')} px={4} py={3}>
+    <Box as="header" bg="bg.card" px={4} py={3} boxShadow="sm">
       <Container maxW="6xl">
         <Flex as="nav" align="center" gap={6}>
           {navigationItems.map(({ path, label }) => (
@@ -48,7 +47,9 @@ function Navigation() {
               as={RouterLink}
               to={path}
               fontWeight={location.pathname === path ? 'bold' : 'medium'}
-              color={location.pathname === path ? 'teal.400' : useColorModeValue('whiteAlpha.900', 'white')}
+              color={location.pathname === path ? 'brand.primary' : 'text.primary'}
+              _hover={{ color: 'brand.primary' }}
+              transition="color 0.2s"
             >
               {label}
             </Link>
@@ -63,13 +64,13 @@ function Navigation() {
 }
 
 function LoadingFallback() {
-  return <Text>Loading...</Text>;
+  return <Text color="text.secondary">Loading...</Text>;
 }
 
 function App() {
   return (
     <Router>
-      <Box minH="100vh" bg="gray.50">
+      <Box minH="100vh" bg="bg.body">
         <Navigation />
         <Container maxW="6xl" py={10} as="main">
           <Suspense fallback={<LoadingFallback />}>
@@ -86,8 +87,8 @@ function App() {
                 path="*"
                 element={
                   <Box textAlign="center" py={20}>
-                    <Text fontSize="2xl" mb={4}>Page Not Found</Text>
-                    <Link as={RouterLink} to="/" color="teal.500">
+                    <Text fontSize="2xl" mb={4} color="text.primary">Page Not Found</Text>
+                    <Link as={RouterLink} to="/" color="brand.primary">
                       Return to Home
                     </Link>
                   </Box>

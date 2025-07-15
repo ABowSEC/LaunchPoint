@@ -1,5 +1,15 @@
 import * as THREE from "three";
 
+// Texture cache to avoid reloading the same texture multiple times
+const textureCache = {};
+
+function getCachedTexture(path) {
+  if (!textureCache[path]) {
+    textureCache[path] = new THREE.TextureLoader().load(path);
+  }
+  return textureCache[path];
+}
+
 class Planet {
   constructor(radius, distance, texturePath) {
     this.radius = radius;
@@ -18,26 +28,19 @@ class Planet {
   }
 
   getTexture() {
-    const loader = new THREE.TextureLoader();
-
     const textureMap = {
-      
       mercury: "/textures/mercury.jpg",
       venus: "/textures/venus.jpg",
       earth: "/textures/earth.jpg",
       mars: "/textures/mars.jpg",
       jupiter: "/textures/jupiter.jpg",
       saturn: "/textures/saturn.jpg",
-
     };
 
     const key = Object.keys(textureMap).find(name => this.texturePath.toLowerCase().includes(name));
-
     const textureFile = textureMap[key];
-    return loader.load(textureFile);
+    return getCachedTexture(textureFile);
   }
-
-  
 }
 
 export default Planet;

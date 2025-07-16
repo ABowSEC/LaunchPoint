@@ -19,7 +19,6 @@ import { ColorModeButton } from './components/ui/color-mode';
 import Home from './pages/Home';
 import LaunchPage from './pages/LaunchPage';
 import MarsPage from './pages/MarsPage';
-import SolViewer from './pages/SolViewer';
 import ExplorePage from './pages/ExplorePage';
 import SolarSimPage from './pages/SolarSimPage';
 import ISSLivePage from './pages/issLive';
@@ -38,7 +37,7 @@ function Navigation() {
   const location = useLocation();
 
   return (
-    <Box as="header" bg="bg.card" px={4} py={3} boxShadow="sm">
+    <Box as="header" bg="bg.card" px={4} py={3} boxShadow="sm" borderBottom="1px solid" borderColor="whiteAlpha.200">
       <Container maxW="6xl">
         <Flex as="nav" align="center" gap={6}>
           {navigationItems.map(({ path, label }) => (
@@ -48,8 +47,23 @@ function Navigation() {
               to={path}
               fontWeight={location.pathname === path ? 'bold' : 'medium'}
               color={location.pathname === path ? 'brand.primary' : 'text.primary'}
-              _hover={{ color: 'brand.primary' }}
-              transition="color 0.2s"
+              _hover={{ 
+                color: 'brand.primary',
+                transform: 'translateY(-1px)',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}
+              transition="all 0.2s"
+              position="relative"
+              _after={{
+                content: '""',
+                position: 'absolute',
+                bottom: '-2px',
+                left: '0',
+                width: location.pathname === path ? '100%' : '0%',
+                height: '2px',
+                bgGradient: 'linear(to-r, teal.400, blue.500)',
+                transition: 'width 0.2s'
+              }}
             >
               {label}
             </Link>
@@ -79,7 +93,6 @@ function App() {
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/launches" element={<LaunchPage />} />
               <Route path="/mars" element={<MarsPage />} />
-              <Route path="/mars/sol/:solId" element={<SolViewer />} />
               <Route path="/iss" element={<ISSLivePage />} />
               <Route path="/solarsim" element={<SolarSimPage />} />
 

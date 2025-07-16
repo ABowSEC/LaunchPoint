@@ -12,14 +12,13 @@ import {
   BreadcrumbLink,
   Spinner,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import MarsFeed from "../components/MarsFeed";
 
 export default function MarsPage() {
   const [availableSols, setAvailableSols] = useState([]);
   const [sol, setSol] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchManifest = async () => {
@@ -44,7 +43,7 @@ export default function MarsPage() {
   const handleSelect = (e) => {
     const selected = e.target.value;
     setSol(selected);
-    navigate(`/mars/sol/${selected}`);
+    // Don't navigate, just update the sol state to show photos on this page
   };
 
   return (
@@ -60,12 +59,10 @@ export default function MarsPage() {
 
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading as="h1" size="2xl" color="brand.primary">
+          <Heading as="h1" size="2xl" bgGradient="linear(to-r, red.400, orange.500)" bgClip="text">
             Mars Rover Photos
           </Heading>
-          <Badge colorScheme="red" variant="outline" fontSize="md" px={3} py={1}>
-            Choose a Sol with Photos
-          </Badge>
+
           <Text fontSize="lg" color="text.secondary" maxW="600px" mx="auto" mt={4}>
             Select a Martian day where NASA’s Curiosity rover captured photos.
           </Text>
@@ -89,6 +86,13 @@ export default function MarsPage() {
             </Select>
           )}
         </Box>
+
+        {/* Mars Photos Feed */}
+        {sol && (
+          <Box w="100%">
+            <MarsFeed sol={sol} />
+          </Box>
+        )}
       </VStack>
     </Container>
   );

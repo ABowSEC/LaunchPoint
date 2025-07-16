@@ -15,15 +15,22 @@ import {
   Link,
   Badge,
   AspectRatio,
-  Container
+  Container,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure
 } from "@chakra-ui/react";
 import {
   MoonIcon,
   SunIcon,
   ExternalLinkIcon,
   CalendarIcon,
-  ViewIcon,
-  ArrowForwardIcon
+  ArrowForwardIcon,
+  DownloadIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -32,9 +39,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [viewCount, setViewCount] = useState(0);
 
   const { colorMode, toggleColorMode } = useColorMode();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [stats] = useState({
     totalImages: 0,
@@ -58,8 +65,8 @@ export default function Home() {
         }
 
         const data = await res.json();
+        console.log('APOD Data:', data); // Debug log to see what we get
         setApod(data);
-        setViewCount(Math.floor(Math.random() * 5000) + 1000);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -103,13 +110,39 @@ export default function Home() {
 
     return (
       <VStack spacing={8}>
-        <Box bg="bg.card" p={6} rounded="xl" shadow="lg">
+        <Box bg="bg.card" p={6} rounded="xl" shadow="lg" position="relative">
           {isVideo ? (
             <AspectRatio ratio={16 / 9}>
               <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
             </AspectRatio>
           ) : (
-            <Image src={apod.url} alt={apod.title} rounded="md" maxH="500px" objectFit="cover" fallbackSrc="https://via.placeholder.com/800x600?text=Image+Unavailable" />
+            <>
+              <Image 
+                src={apod.url} 
+                alt={apod.title} 
+                rounded="md" 
+                maxH="500px" 
+                objectFit="cover" 
+                fallbackSrc="/hal9000.png"
+                cursor="pointer"
+                onClick={onOpen}
+                transition="transform 0.3s ease"
+                _hover={{ transform: "scale(1.02)" }}
+              />
+              <IconButton
+                position="absolute"
+                top="8"
+                right="8"
+                aria-label="View fullscreen"
+                icon={<ExternalLinkIcon />}
+                onClick={onOpen}
+                colorScheme="blue"
+                variant="solid"
+                opacity={0.8}
+                _hover={{ opacity: 1, transform: "scale(1.1)" }}
+                transition="all 0.3s ease"
+              />
+            </>
           )}
         </Box>
 
@@ -123,9 +156,15 @@ export default function Home() {
                 {new Date(apod.date).toLocaleDateString("en-US")}
               </Badge>
             )}
-            <Badge colorScheme="teal" px={3} py={1} borderRadius="full">
-              <ViewIcon mr={2} /> {viewCount.toLocaleString()} views
-            </Badge>
+            {apod.copyright && apod.copyright.trim() !== "" ? (
+              <Badge colorScheme="teal" px={3} py={1} borderRadius="full">
+                Photography by {apod.copyright}
+              </Badge>
+            ) : (
+              <Badge colorScheme="gray" px={3} py={1} borderRadius="full">
+                NASA Image
+              </Badge>
+            )}
           </HStack>
 
           <Text fontSize="md" maxW="3xl" color="text.primary">
@@ -138,9 +177,13 @@ export default function Home() {
             </Button>
           )}
 
-          {apod.copyright && (
+          {apod.copyright && apod.copyright.trim() !== "" ? (
             <Text fontSize="sm" color="text.secondary" fontStyle="italic">
-              © {apod.copyright}
+              Photography by {apod.copyright}
+            </Text>
+          ) : (
+            <Text fontSize="sm" color="text.secondary" fontStyle="italic">
+              Courtesy of NASA
             </Text>
           )}
         </VStack>
@@ -169,10 +212,37 @@ export default function Home() {
             Explore the universe *** powered by NASA data
           </Text>
           <HStack spacing={4}>
-            <Button as={RouterLink} to="/explore" colorScheme="teal" size="lg">
+            <Button 
+              as={RouterLink} 
+              to="/explore" 
+              size="lg"
+              bgGradient="linear(to-r, teal.400, blue.500)"
+              _hover={{
+                bgGradient: "linear(to-r, teal.500, blue.600)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 25px rgba(0,0,0,0.3)"
+              }}
+              _active={{
+                transform: "translateY(0px)"
+              }}
+              transition="all 0.3s"
+            >
               Start Exploring
             </Button>
-            <Button variant="outline" colorScheme="teal" size="lg" as={RouterLink} to="/launches">
+            <Button 
+              variant="outline" 
+              colorScheme="teal" 
+              size="lg" 
+              as={RouterLink} 
+              to="/launches"
+              _hover={{
+                bgGradient: "linear(to-r, teal.400, blue.500)",
+                color: "white",
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 25px rgba(0,0,0,0.3)"
+              }}
+              transition="all 0.3s"
+            >
               Learn More
             </Button>
           </HStack>
@@ -185,23 +255,153 @@ export default function Home() {
         <Divider my={12} />
 
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            _hover={{
+              transform: "translateY(-4px)",
+              shadow: "xl",
+              borderColor: "teal.400"
+            }}
+            border="1px solid"
+            borderColor="transparent"
+            transition="all 0.3s"
+          >
             <Text fontSize="lg" mb={2} color="text.primary">Total Images</Text>
-            <Heading size="xl" color="brand.primary">{stats.totalImages.toLocaleString()}</Heading>
+            <Heading size="xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">{stats.totalImages.toLocaleString()}</Heading>
             <Text fontSize="sm" color="text.secondary">From NASA's archives</Text>
           </Box>
-          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            _hover={{
+              transform: "translateY(-4px)",
+              shadow: "xl",
+              borderColor: "purple.400"
+            }}
+            border="1px solid"
+            borderColor="transparent"
+            transition="all 0.3s"
+          >
             <Text fontSize="lg" mb={2} color="text.primary">Daily Visitors</Text>
-            <Heading size="xl" color="brand.primary">{stats.dailyVisitors.toLocaleString()}</Heading>
+            <Heading size="xl" bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">{stats.dailyVisitors.toLocaleString()}</Heading>
             <Text fontSize="sm" color="text.secondary">Space enthusiasts worldwide</Text>
           </Box>
-          <Box bg="bg.card" p={6} rounded="xl" shadow="md" textAlign="center">
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            _hover={{
+              transform: "translateY(-4px)",
+              shadow: "xl",
+              borderColor: "orange.400"
+            }}
+            border="1px solid"
+            borderColor="transparent"
+            transition="all 0.3s"
+          >
             <Text fontSize="lg" mb={2} color="text.primary">Space Events</Text>
-            <Heading size="xl" color="brand.primary">{stats.spaceEvents}</Heading>
+            <Heading size="xl" bgGradient="linear(to-r, orange.400, red.500)" bgClip="text">{stats.spaceEvents}</Heading>
             <Text fontSize="sm" color="text.secondary">This month</Text>
           </Box>
         </SimpleGrid>
       </Container>
+
+      {/* Fullscreen Image Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+        <ModalOverlay />
+        <ModalContent bg="gray.900" color="white">
+          <ModalHeader>
+            <HStack justify="space-between" align="center">
+              <Text>{apod?.title}</Text>
+              <HStack spacing={2}>
+                <Button
+                  leftIcon={<ExternalLinkIcon />}
+                  size="sm"
+                  onClick={() => window.open(apod?.url, '_blank')}
+                  colorScheme="blue"
+                >
+                  Open Original
+                </Button>
+                <Button
+                  leftIcon={<DownloadIcon />}
+                  size="sm"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = apod?.url;
+                    link.download = `apod_${apod?.date || 'today'}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  colorScheme="green"
+                >
+                  Download
+                </Button>
+              </HStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {apod && (
+              <VStack spacing={4}>
+                <Image 
+                  src={apod.url} 
+                  alt={apod.title}
+                  maxH="70vh"
+                  objectFit="contain"
+                  borderRadius="lg"
+                  fallbackSrc="/hal9000.png"
+                />
+                <VStack spacing={3} w="100%" textAlign="left">
+                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
+                    <Heading size="sm" mb={3} bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
+                      Image Information
+                    </Heading>
+                    <SimpleGrid columns={[1, 2]} spacing={4}>
+                      <Box>
+                        <Text fontSize="sm" color="text.secondary">Date</Text>
+                        <Text fontWeight="bold">{apod.date}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" color="text.secondary">Type</Text>
+                        <Text fontWeight="bold">{apod.media_type}</Text>
+                      </Box>
+                      {apod.copyright && apod.copyright.trim() !== "" && (
+                        <Box>
+                          <Text fontSize="sm" color="text.secondary">Photographer</Text>
+                          <Text fontWeight="bold" color="teal.300">{apod.copyright}</Text>
+                        </Box>
+                      )}
+                      <Box>
+                        <Text fontSize="sm" color="text.secondary">Service Version</Text>
+                        <Text fontWeight="bold">{apod.service_version}</Text>
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
+                  
+                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
+                    <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
+                      Description
+                    </Heading>
+                    <Text fontSize="md" color="text.primary" lineHeight="1.6">
+                      {apod.explanation}
+                    </Text>
+                  </Box>
+                </VStack>
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

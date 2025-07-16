@@ -16,7 +16,7 @@ function ISSVideoFeed() {
     <Box
       as="iframe"
       title="ISS Live Feed"
-      src="https://www.youtube.com/embed/86YLFOog4GM?autoplay=1&mute=1"
+      src="https://www.youtube.com/embed/H999s0P1Er0?autoplay=1&mute=1"
       width="100%"
       height="500px"
       border="0"
@@ -50,7 +50,7 @@ export default function ISSLivePage() {
 
   return (
     <Box bg="bg.body" px={8} py={10} maxW="6xl" mx="auto">
-      <Heading size="xl" textAlign="center" mb={6}>
+      <Heading size="xl" textAlign="center" mb={6} bgGradient="linear(to-r, cyan.400, blue.500)" bgClip="text">
         International Space Station — Live Feed & Telemetry
       </Heading>
       <Text fontSize="md" color="text.secondary" textAlign="center" mb={10}>

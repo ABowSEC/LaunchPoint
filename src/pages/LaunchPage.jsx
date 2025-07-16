@@ -7,12 +7,21 @@ import {
   HStack,
   Icon,
   Divider,
-  Badge
+  Badge,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  useColorMode
 } from "@chakra-ui/react";
-import { StarIcon } from "@chakra-ui/icons";
+import { StarIcon, TimeIcon } from "@chakra-ui/icons";
+import { FaRocket } from "react-icons/fa";
 import LaunchFeed from "../components/LaunchFeed";
 
 export default function LaunchPage() {
+  const { colorMode } = useColorMode();
+  
   return (
     <Container maxW="8xl" py={8}>
       <VStack spacing={8} align="stretch">
@@ -20,11 +29,12 @@ export default function LaunchPage() {
         <Box textAlign="center">
           <VStack spacing={4}>
             <HStack justify="center" spacing={3}>
-              <Icon as={StarIcon} w={8} h={8} color="brand.primary" />
+              <Icon as={StarIcon} w={8} h={8} color="blue.400" />
               <Heading 
                 as="h1" 
                 size="2xl" 
-                color="brand.primary"
+                bgGradient="linear(to-r, blue.400, purple.500)" 
+                bgClip="text"
               >
                 Launch Tracker
               </Heading>
@@ -57,6 +67,84 @@ export default function LaunchPage() {
           <Divider mt={8} borderColor="border.default" />
         </Box>
 
+        {/* Launch Statistics */}
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            border="1px solid"
+            borderColor="border.default"
+            _hover={{
+              transform: "translateY(-2px)",
+              shadow: "lg",
+              borderColor: "blue.300"
+            }}
+            transition="all 0.3s"
+          >
+            <Icon as={FaRocket} w={8} h={8} color="blue.400" mb={3} />
+            <Stat>
+              <StatNumber fontSize="2xl" bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">
+                Live
+              </StatNumber>
+              <StatLabel>Launch Tracking</StatLabel>
+              <StatHelpText>Real-time updates</StatHelpText>
+            </Stat>
+          </Box>
+          
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            border="1px solid"
+            borderColor="border.default"
+            _hover={{
+              transform: "translateY(-2px)",
+              shadow: "lg",
+              borderColor: "green.300"
+            }}
+            transition="all 0.3s"
+          >
+            <Icon as={TimeIcon} w={8} h={8} color="green.400" mb={3} />
+            <Stat>
+              <StatNumber fontSize="2xl" bgGradient="linear(to-r, green.400, teal.500)" bgClip="text">
+                Countdown
+              </StatNumber>
+              <StatLabel>Live Timers</StatLabel>
+              <StatHelpText>Precision timing</StatHelpText>
+            </Stat>
+          </Box>
+          
+          <Box 
+            bg="bg.card" 
+            p={6} 
+            rounded="xl" 
+            shadow="md" 
+            textAlign="center"
+            border="1px solid"
+            borderColor="border.default"
+            _hover={{
+              transform: "translateY(-2px)",
+              shadow: "lg",
+              borderColor: "purple.300"
+            }}
+            transition="all 0.3s"
+          >
+            <Icon as={StarIcon} w={8} h={8} color="purple.400" mb={3} />
+            <Stat>
+              <StatNumber fontSize="2xl" bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
+                Global
+              </StatNumber>
+              <StatLabel>Space Agencies</StatLabel>
+              <StatHelpText>Worldwide coverage</StatHelpText>
+            </Stat>
+          </Box>
+        </SimpleGrid>
+
         {/* Launch Feed Section */}
         <Box>
           <VStack spacing={6} align="stretch">
@@ -75,7 +163,7 @@ export default function LaunchPage() {
                 fontSize="md"
                 textAlign={{ base: "center", md: "left" }}
               >
-                Latest information from NASA's launch schedule
+                Latest information from global space agencies and launch providers
               </Text>
             </Box>
             

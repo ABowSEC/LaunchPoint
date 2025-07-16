@@ -9,7 +9,7 @@ export default function ExplorePage() {
     <Container maxW="7xl" py={10} bg="bg.body">
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading size="2xl" color="brand.primary">Explore the Cosmos</Heading>
+          <Heading size="2xl" bgGradient="linear(to-r, green.400, teal.500)" bgClip="text">Explore the Cosmos</Heading>
           <Text fontSize="lg" color="text.secondary">
             Search NASA data, explore missions, and discover celestial events.
           </Text>

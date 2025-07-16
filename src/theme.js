@@ -1,8 +1,7 @@
-// src/theme.js (or src/color-mode.js)
 
 import { extendTheme } from '@chakra-ui/react';
 
-// Custom brand colors (edit these to change your site's look)
+// Custom brand colors 
 const colors = {
   brand: {
     50: '#e3f2fd',
@@ -21,7 +20,7 @@ const colors = {
   },
 };
 
-// Semantic tokens for easy theming
+// Semantic tokens 
 const semanticTokens = {
   colors: {
     'bg.body': {

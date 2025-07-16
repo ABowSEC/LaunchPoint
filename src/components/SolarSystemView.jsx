@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Flex, Text, Button, HStack, VStack } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, HStack, VStack, IconButton, Checkbox } from "@chakra-ui/react";
+import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
 import * as THREE from "three";
 import Planet from "./Planet";
 
@@ -89,10 +90,119 @@ class OrbitControls {
     }
   }
 }
+// FUTURE MIGRATION NOTE: For future enhancements Ive considered using react-three-fiber (https://docs.pmnd.rs/react-three-fiber Read More about later) to manage the 3D scene as a React component. 7/15/2025
+// This would allow for more declarative scene construction, easier integration of UI state (e.g., solo planet views, moons, overlays), and better React lifecycle management.
+// Current implementation uses imperative Three.js, but migration to react-three-fiber would make features like dynamic planet focus, adding moons, or interactive overlays more idiomatic and maintainable in React.
 
 export default function SolarSystemView() {
   const mountRef = useRef(null);
   const [focusedPlanet, setFocusedPlanet] = useState(null);
+  const focusedPlanetRef = useRef(focusedPlanet);
+  const desiredRadiusRef = useRef(80); // Default camera distance 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [simulationSpeed, setSimulationSpeed] = useState(1); // Earth days per second
+  const speedRef = useRef(simulationSpeed);
+  const [showOrbitLines, setShowOrbitLines] = useState(true); // New state for orbit lines visibility
+  const orbitLinesRef = useRef([]); // Ref to store orbit line references
+
+  // Enhanced orbit data with realistic parameters - increased distances
+  const planetOrbitData = {
+    Mercury: { 
+      a: 8, b: 7.8, period: 88, inclination: 7, 
+      radius: 0.7, texture: 'textures/mercury.jpg' 
+    },
+    Venus: { 
+      a: 12, b: 11.9, period: 225, inclination: 3.4, 
+      radius: 1, texture: 'textures/venus.jpg' 
+    },
+    Earth: { 
+      a: 16, b: 15.98, period: 365, inclination: 0, 
+      radius: 1.2, texture: 'textures/earth.jpg' 
+    },
+    Mars: { 
+      a: 20, b: 19.8, period: 687, inclination: 1.85, 
+      radius: 1, texture: 'textures/mars.jpg' 
+    },
+    Jupiter: { 
+      a: 28, b: 27.9, period: 4333, inclination: 1.3, 
+      radius: 2, texture: 'textures/jupiter.jpg' 
+    },
+    Saturn: { 
+      a: 38, b: 37.8, period: 10759, inclination: 2.5, 
+      radius: 1.8, texture: 'textures/saturn.jpg', hasRings: true, ringType: 'saturn'
+    },
+    Uranus: { 
+      a: 48, b: 47.8, period: 30687, inclination: 0.8, 
+      radius: 1.4, texture: 'textures/uranus.jpg', hasRings: true, ringType: 'uranus'
+    },
+    Neptune: { 
+      a: 58, b: 57.8, period: 60190, inclination: 1.8, 
+      radius: 1.3, texture: 'textures/neptune.jpg', hasRings: true, ringType: 'neptune'
+    },
+    Pluto: { 
+      a: 68, b: 67.5, period: 90520, inclination: 17.2, 
+      radius: 0.5, texture: 'textures/pluto.jpg' 
+    },
+  };
+
+  // Keep the refs in sync with the state
+  useEffect(() => {
+    focusedPlanetRef.current = focusedPlanet;
+    speedRef.current = simulationSpeed;
+    // Set desired camera radius based on focused planet
+    if (focusedPlanet) {
+      const orbit = planetOrbitData[focusedPlanet]?.a || 20;
+      desiredRadiusRef.current = orbit + 5; // Increased buffer for better viewing
+    } else {
+      // Default zoomed-out view
+      desiredRadiusRef.current = 80;
+    }
+  }, [focusedPlanet, simulationSpeed]);
+
+  // Prevent page scrolling when interacting with 3D model Essential
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (mountRef.current && mountRef.current.contains(e.target)) {
+        e.preventDefault();
+      }
+    };
+
+    const handleMouseDown = (e) => {
+      if (mountRef.current && mountRef.current.contains(e.target)) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    document.addEventListener('mousedown', handleMouseDown, { passive: false });
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
+
+  // Fullscreen toggle
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      mountRef.current?.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  // Orbit lines toggle - much more efficient
+  const toggleOrbitLines = () => {
+    const newVisibility = !showOrbitLines;
+    setShowOrbitLines(newVisibility);
+    
+    // Directly control visibility without re-rendering scene
+    orbitLinesRef.current.forEach(line => {
+      line.material.visible = newVisibility;
+    });
+  };
 
   // Planet data for the selector
   const planetData = {
@@ -101,7 +211,10 @@ export default function SolarSystemView() {
     Earth: { texture: 'textures/earth.jpg', symbol: '' },
     Mars: { texture: 'textures/mars.jpg', symbol: '' },
     Jupiter: { texture: 'textures/jupiter.jpg', symbol: '' },
-    Saturn: { texture: 'textures/saturn.jpg', symbol: '' }
+    Saturn: { texture: 'textures/saturn.jpg', symbol: '' },
+    Uranus: { texture: 'textures/uranus.jpg', symbol: '' },
+    Neptune: { texture: 'textures/neptune.jpg', symbol: '' },
+    Pluto: { texture: 'textures/pluto.jpg', symbol: '' },
   };
 
   useEffect(() => {
@@ -142,16 +255,23 @@ export default function SolarSystemView() {
     controls.enableDamping = true;
     controls.enablePan = false;
 
-    const pointLight = new THREE.PointLight(0xffffff,10, 1000);
+    // Main sun light 
+    const pointLight = new THREE.PointLight(0xffffff, 35, 1000);
     pointLight.position.set(0, 0, 0);
     pointLight.castShadow = true;
 
     pointLight.shadow.mapSize.width = 1024;
-    pointLight.shadow.mapSize.width = 1024;
+    pointLight.shadow.mapSize.height = 1024;
     scene.add(pointLight);
 
-    const ambient = new THREE.AmbientLight(0x404040, 1);
+    // Ambient light for overall illumination
+    const ambient = new THREE.AmbientLight(0x404040, 1.2);
     scene.add(ambient);
+
+    // Additional directional light for better planet visibility
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(50, 50, 50);
+    scene.add(directionalLight);
 
     const sunGeometry = new THREE.SphereGeometry(4, 64, 64);
     const sunTexture = new THREE.TextureLoader().load("/textures/sun.jpg");
@@ -166,70 +286,305 @@ export default function SolarSystemView() {
     sunMesh.receiveShadow = false;
     scene.add(sunMesh);
      
-    //SUNGLOW VFX
-    /*const glowGeometry = new THREE.SphereGeometry(6, 64, 64); // slightly larger than sun
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffaa00,
-      transparent: true,
-      opacity: 0.15,
-      side: THREE.BackSide, // render from inside
-      depthWrite: false
-    });
-    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    scene.add(glowMesh);*/
 
     const solarSystem = new THREE.Group();
     const planetObjects = {};
+    const orbitLines = []; // Array to store orbit line references
+    orbitLinesRef.current = orbitLines; // Store reference for external access
 
-    const createOrbitEllipse = (radiusX, radiusZ) => {
-      const curve = new THREE.EllipseCurve(0, 0, radiusX, radiusZ, 0, 2 * Math.PI, false, 0);
+    // Enhanced ellipse creation with inclination
+    const createOrbitEllipse = (a, b, inclination) => {
+      const curve = new THREE.EllipseCurve(0, 0, a, b, 0, 2 * Math.PI, false, 0);
       const points = curve.getPoints(100);
-      const geometry = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(p.x, 0, p.y)));
+      const geometry = new THREE.BufferGeometry().setFromPoints(
+        points.map(p => {
+          const x = p.x;
+          const z = p.y;
+          const y = Math.sin(inclination * Math.PI / 180) * z;
+          return new THREE.Vector3(x, y, z);
+        })
+      );
       const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.3 });
       return new THREE.Line(geometry, material);
     };
 
-    const createPlanetSystem = (planetData, orbitRadiusX, orbitRadiusZ, name) => {
+    // Create procedural ring textures
+    const createRingTexture = (type, innerRadius, outerRadius) => {
+      const canvas = document.createElement('canvas');
+      const size = 512;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+      ctx.fillRect(0, 0, size, size);
+      
+      const center = size / 2;
+      const maxRadius = size / 2 - 10;
+      
+      // Scale radii to canvas
+      const scale = maxRadius / outerRadius;
+      const scaledInner = innerRadius * scale;
+      const scaledOuter = outerRadius * scale;
+      
+      switch (type) {
+        case 'saturn':
+          // Saturn's rings with Cassini Division
+          const gradient1 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
+          gradient1.addColorStop(0, 'rgba(212, 175, 55, 0.8)'); // Golden
+          gradient1.addColorStop(0.3, 'rgba(212, 175, 55, 0.9)');
+          gradient1.addColorStop(0.45, 'rgba(212, 175, 55, 0.3)'); // Cassini Division
+          gradient1.addColorStop(0.55, 'rgba(212, 175, 55, 0.3)'); // Cassini Division
+          gradient1.addColorStop(0.7, 'rgba(212, 175, 55, 0.9)');
+          gradient1.addColorStop(1, 'rgba(212, 175, 55, 0.6)');
+          
+          ctx.fillStyle = gradient1;
+          ctx.beginPath();
+          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
+          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
+          ctx.fill();
+          
+          // Add some noise/irregularities
+          for (let i = 0; i < 50; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
+            const x = center + Math.cos(angle) * radius;
+            const y = center + Math.sin(angle) * radius;
+            const opacity = Math.random() * 0.3;
+            
+            ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.random() * 3 + 1, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+          break;
+          
+        case 'uranus':
+          // Uranus's dark, subtle rings
+          const gradient2 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
+          gradient2.addColorStop(0, 'rgba(74, 74, 74, 0.6)');
+          gradient2.addColorStop(0.5, 'rgba(74, 74, 74, 0.4)');
+          gradient2.addColorStop(1, 'rgba(74, 74, 74, 0.2)');
+          
+          ctx.fillStyle = gradient2;
+          ctx.beginPath();
+          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
+          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
+          ctx.fill();
+          
+          // Add subtle variations
+          for (let i = 0; i < 30; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
+            const x = center + Math.cos(angle) * radius;
+            const y = center + Math.sin(angle) * radius;
+            const opacity = Math.random() * 0.2;
+            
+            ctx.fillStyle = `rgba(74, 74, 74, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.random() * 2 + 1, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+          break;
+          
+        case 'neptune':
+          // Neptune's faint, clumpy rings
+          const gradient3 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
+          gradient3.addColorStop(0, 'rgba(102, 102, 102, 0.5)');
+          gradient3.addColorStop(0.7, 'rgba(102, 102, 102, 0.3)');
+          gradient3.addColorStop(1, 'rgba(102, 102, 102, 0.1)');
+          
+          ctx.fillStyle = gradient3;
+          ctx.beginPath();
+          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
+          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
+          ctx.fill();
+          
+          // Add clumpy structures (arcs)
+          for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
+            const x = center + Math.cos(angle) * radius;
+            const y = center + Math.sin(angle) * radius;
+            const opacity = Math.random() * 0.4 + 0.2;
+            
+            ctx.fillStyle = `rgba(102, 102, 102, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.random() * 4 + 2, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+          break;
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      return texture;
+    };
+
+    const createPlanetSystem = (planetName) => {
+      const data = planetOrbitData[planetName];
       const group = new THREE.Group();
-      const mesh = planetData.getMesh();
+      const mesh = new Planet(data.radius, 0, data.texture).getMesh();
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
-      scene.add(createOrbitEllipse(orbitRadiusX, orbitRadiusZ));
-      planetObjects[name] = { mesh, group, orbitRadiusX, orbitRadiusZ, angle: 0 };
+      
+      // Add planet rings
+      if (data.hasRings) {
+        let ringGeometry, ringMaterial;
+        
+        switch (data.ringType) {
+          case 'saturn':
+            // Saturn's prominent golden rings with Cassini Division
+            ringGeometry = new THREE.RingGeometry(data.radius * 1.8, data.radius * 3.0, 64);
+            const saturnRingTexture = createRingTexture('saturn', data.radius * 1.8, data.radius * 3.0);
+            ringMaterial = new THREE.MeshStandardMaterial({ 
+              map: saturnRingTexture,
+              transparent: true, 
+              opacity: 0.9,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            });
+            break;
+            
+          case 'uranus':
+            //  dark, subtle rings
+            ringGeometry = new THREE.RingGeometry(data.radius * 1.5, data.radius * 2.2, 32);
+            const uranusRingTexture = createRingTexture('uranus', data.radius * 1.5, data.radius * 2.2);
+            ringMaterial = new THREE.MeshStandardMaterial({ 
+              map: uranusRingTexture,
+              transparent: true, 
+              opacity: 0.7,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            });
+            break;
+            
+          case 'neptune':
+            // Neptune's faint, clumpy rings
+            ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 24);
+            const neptuneRingTexture = createRingTexture('neptune', data.radius * 1.4, data.radius * 2.0);
+            ringMaterial = new THREE.MeshStandardMaterial({ 
+              map: neptuneRingTexture,
+              transparent: true, 
+              opacity: 0.6,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            });
+            break;
+            
+          default:
+            // Default ring style
+            ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 48);
+            ringMaterial = new THREE.MeshBasicMaterial({ 
+              color: 0x666666, 
+              transparent: true, 
+              opacity: 0.4,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            });
+        }
+        
+        const rings = new THREE.Mesh(ringGeometry, ringMaterial);
+        rings.rotation.x = Math.PI / 2; // Rotate to be horizontal
+        rings.position.y = 0; // Ensure rings are centered on the planet
+        rings.renderOrder = 1; // Ensure rings render after the planet
+        group.add(rings);
+        
+        // Debug: Log that rings were created
+        console.log(`Created rings for ${planetName}:`, {
+          type: data.ringType,
+          innerRadius: data.radius * 1.4,
+          outerRadius: data.radius * 2.0
+        });
+      }
+      
+      // Create inclined orbit ellipse and store reference
+      const orbitLine = createOrbitEllipse(data.a, data.b, data.inclination);
+      orbitLines.push(orbitLine);
+      scene.add(orbitLine); // Always add to scene, visibility controlled by material
+      
+      planetObjects[planetName] = { 
+        mesh, 
+        group, 
+        ...data,
+        angle: 0,
+        startTime: Math.random() * 2 * Math.PI // Random starting position
+      };
       return { group, mesh };
     };
 
-    const planets = [
-      createPlanetSystem(new Planet(0.7, 0, "textures/mercury.jpg"), 6, 5, "Mercury"),
-      createPlanetSystem(new Planet(1, 0, "textures/venus.jpg"), 9, 8, "Venus"),
-      createPlanetSystem(new Planet(1.2, 0, "textures/earth.jpg"), 12, 10, "Earth"),
-      createPlanetSystem(new Planet(1, 0, "textures/mars.jpg"), 15, 13, "Mars"),
-      createPlanetSystem(new Planet(2, 0, "textures/jupiter.jpg"), 20, 18, "Jupiter"),
-      createPlanetSystem(new Planet(1.8, 0, "textures/saturn.jpg"), 25, 23, "Saturn")
-    ];
+    // Create asteroid belt
+    const createAsteroidBelt = () => {
+      const asteroidGroup = new THREE.Group();
+      const asteroidCount = 200;
+      
+      for (let i = 0; i < asteroidCount; i++) {
+        const asteroidGeometry = new THREE.SphereGeometry(0.02 + Math.random() * 0.03, 8, 8);
+        const asteroidMaterial = new THREE.MeshBasicMaterial({ 
+          color: 0x8B7355,
+          transparent: true,
+          opacity: 0.7
+        });
+        const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+        
+        // Position asteroids in a belt between Mars and Jupiter (updated distances)
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = 24 + Math.random() * 2; // Between 24-26 units (between Mars at 20 and Jupiter at 28)
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = (Math.random() - 0.5) * 0.5; //  vertical variations
+        
+        asteroid.position.set(x, y, z);
+        asteroidGroup.add(asteroid);
+      }
+      
+      scene.add(asteroidGroup);
+    };
+
+    // Create planets using the enhanced data
+    const planets = Object.keys(planetOrbitData).map(name => 
+      createPlanetSystem(name)
+    );
 
     planets.forEach(p => solarSystem.add(p.group));
     scene.add(solarSystem);
+    
+    // Add asteroid belt
+    createAsteroidBelt();
 
+    // Animation loop with enhanced orbital mechanics
+    let startTime = Date.now();
     const animate = () => {
       requestAnimationFrame(animate);
+      const elapsedTime = (Date.now() - startTime) * 0.001; // Convert to seconds
+      
       sunMesh.rotation.y += 0.002;
 
       Object.keys(planetObjects).forEach(name => {
-        const p = planetObjects[name];
-        p.angle += 0.01 * (6 / p.orbitRadiusX);
-        p.mesh.position.set(
-          Math.cos(p.angle) * p.orbitRadiusX,
-          0,
-          Math.sin(p.angle) * p.orbitRadiusZ
-        );
-        p.mesh.rotation.y += 0.02;
+        const planet = planetObjects[name];
+        // Calculate orbital position based on time, period, and speed
+        const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed
+        const x = Math.cos(t) * planet.a;
+        const z = Math.sin(t) * planet.b;
+        const y = Math.sin(planet.inclination * Math.PI / 180) * z;
+        
+        // Move the entire group (planet + rings) to the orbital position
+        planet.group.position.set(x, y, z);
+        planet.mesh.rotation.y += 0.02;
       });
 
-      if (focusedPlanet && planetObjects[focusedPlanet]) {
-        const target = planetObjects[focusedPlanet].mesh;
+      // Use the ref for focus
+      if (focusedPlanetRef.current && planetObjects[focusedPlanetRef.current]) {
+        const target = planetObjects[focusedPlanetRef.current].group; // Target the group instead of mesh
         controls.target.lerp(target.position, 0.05);
+        // Smoothly interpolate camera radius
+        controls.spherical.radius += (desiredRadiusRef.current - controls.spherical.radius) * 0.08;
+      } else {
+        // Smoothly interpolate camera radius to default
+        controls.spherical.radius += (desiredRadiusRef.current - controls.spherical.radius) * 0.08;
       }
 
       controls.update();
@@ -256,36 +611,191 @@ export default function SolarSystemView() {
       window.removeEventListener("resize", handleResize);
       renderer.dispose();
     };
-  }, [focusedPlanet]);
+  }, []); // Only run once on mount
 
   return (
-    <VStack spacing={6} w="100%" h="100vh">
+    <VStack spacing={6} w="100%" h="100vh" maxW="100vw" overflowX="hidden">
       {/* 3D Solar System Viewer */}
       <Box
         ref={mountRef}
         w="100%"
-        h="70vh"
+        h={{ base: "50vh", md: "70vh" }}
+        minH="350px"
         bg="gray.900"
         borderRadius="lg"
         overflow="hidden"
         boxShadow="2xl"
         border="1px solid"
         borderColor="whiteAlpha.200"
-      />
+        position="relative"
+      >
+        <IconButton
+          position="absolute"
+          top={2}
+          right={2}
+          zIndex={10}
+          aria-label="Toggle fullscreen"
+          icon={isFullscreen ? <CloseIcon /> : <ExternalLinkIcon />}
+          onClick={toggleFullscreen}
+          colorScheme="blue"
+          size="sm"
+          variant="solid"
+          opacity={0.8}
+          _hover={{ opacity: 1 }}
+        />
+        
+        {/* Orbit Lines Toggle Checkbox */}
+        <Box
+          position="absolute"
+          top={2}
+          left={2}
+          zIndex={10}
+          bg="rgba(0, 0, 0, 0.7)"
+          borderRadius="md"
+          p={2}
+          backdropFilter="blur(5px)"
+          border="1px solid"
+          borderColor="whiteAlpha.200"
+        >
+          <Checkbox
+            isChecked={showOrbitLines}
+            onChange={toggleOrbitLines}
+            colorScheme="green"
+            size="sm"
+          >
+            <Text fontSize="xs" color="white" fontWeight="medium">
+              Orbits
+            </Text>
+          </Checkbox>
+        </Box>
+      </Box>
+
+      {/* Speed Controls */}
+      <Box
+        w="100%"
+        maxW="600px"
+        mx="auto"
+        bg="linear-gradient(135deg, rgba(26, 32, 44, 0.95), rgba(45, 55, 72, 0.95))"
+        backdropFilter="blur(10px)"
+        borderRadius="xl"
+        p={4}
+        border="1px solid"
+        borderColor="whiteAlpha.200"
+        boxShadow="xl"
+      >
+        <VStack spacing={4}>
+          <Text
+            fontSize="lg"
+            fontWeight="bold"
+            textAlign="center"
+            bgGradient="linear(45deg, blue.400, purple.400)"
+            bgClip="text"
+          >
+            Simulation Speed: {simulationSpeed.toFixed(1)} Earth Days/Second
+          </Text>
+          
+          <HStack spacing={4} justify="center" flexWrap="wrap">
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(0.1)}
+              colorScheme="blue"
+              variant={simulationSpeed === 0.1 ? "solid" : "outline"}
+            >
+              0.1x
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(0.5)}
+              colorScheme="blue"
+              variant={simulationSpeed === 0.5 ? "solid" : "outline"}
+            >
+              0.5x
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(1)}
+              colorScheme="blue"
+              variant={simulationSpeed === 1 ? "solid" : "outline"}
+            >
+              1x
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(5)}
+              colorScheme="blue"
+              variant={simulationSpeed === 5 ? "solid" : "outline"}
+            >
+              5x
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(10)}
+              colorScheme="blue"
+              variant={simulationSpeed === 10 ? "solid" : "outline"}
+            >
+              10x
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSimulationSpeed(50)}
+              colorScheme="red"
+              variant={simulationSpeed === 50 ? "solid" : "outline"}
+            >
+              50x
+            </Button>
+          </HStack>
+          
+          <Text fontSize="sm" color="text.secondary" textAlign="center">
+            Use preset speeds or adjust the slider below
+          </Text>
+          
+          <HStack w="100%" spacing={4} align="center">
+            <Text fontSize="sm" color="text.secondary" minW="60px">
+              0.1x
+            </Text>
+            <Box flex={1}>
+              <input
+                type="range"
+                min="0.1"
+                max="100"
+                step="0.1"
+                value={simulationSpeed}
+                onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  borderRadius: '3px',
+                  background: 'linear-gradient(90deg, #3182ce 0%, #805ad5 100%)',
+                  outline: 'none',
+                  opacity: 0.8,
+                  cursor: 'pointer'
+                }}
+              />
+            </Box>
+            <Text fontSize="sm" color="text.secondary" minW="60px">
+              100x
+            </Text>
+          </HStack>
+        </VStack>
+      </Box>
+
+
 
       {/* Planet Selector Section */}
       <Box
         w="100%"
+        maxW="900px"
+        mx="auto"
         bg="linear-gradient(135deg, rgba(26, 32, 44, 0.95), rgba(45, 55, 72, 0.95))"
         backdropFilter="blur(10px)"
         borderRadius="xl"
-        p={6}
+        p={{ base: 3, md: 6 }}
         border="1px solid"
         borderColor="whiteAlpha.200"
         boxShadow="xl"
       >
         <Text
-          fontSize="2xl"
+          fontSize={{ base: "lg", md: "2xl" }}
           fontWeight="bold"
           textAlign="center"
           mb={6}

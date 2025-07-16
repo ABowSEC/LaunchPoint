@@ -109,7 +109,7 @@ export default function LaunchPage() {
           </VStack>
         </Box>
 
-        {/* Quick Stats or Status (Optional - can be populated by LaunchFeed) */}
+        {/* Quick Stats or Status  */}
         <Box 
           bg="bg.card" 
           p={4} 

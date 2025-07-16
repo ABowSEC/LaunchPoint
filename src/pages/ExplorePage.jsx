@@ -30,7 +30,7 @@ export default function ExplorePage() {
         {/*  search results and filterable categories */}
         <Box mt={6}>
           <Text color="text.secondary" fontStyle="italic">
-            Feature under construction — soon you'll be able to search for images, missions, and events.
+            Feature under construction. Soon you'll be able to search for images, missions, and events.
           </Text>
         </Box>
 
@@ -38,7 +38,7 @@ export default function ExplorePage() {
             <Heading size="xl" mb={6} color="brand.primary">Explore Missions & Discoveries</Heading>
   
             <Text fontSize="lg" mb={8} color="text.primary">
-                Dive into NASA’s legacy—from early Apollo missions to modern Mars exploration. Click any mission for reports or media.
+                Dive into NASA's legacy. From early Apollo missions to modern Mars exploration. Click any mission for reports or media.
             </Text>
 
             <Timeline />  {/* Embedded timeline component here */}

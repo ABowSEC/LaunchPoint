@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Box, Flex, Text, Button, HStack, VStack, IconButton, Checkbox } from "@chakra-ui/react";
 import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
 import * as THREE from "three";
 import Planet from "./Planet";
+import { createRingTexture, createOrbitEllipse } from '../utils/threeHelpers';
+import { useAnimationFrame } from '../hooks/useAnimationFrame';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { useSyncedRef } from '../hooks/useSyncedRef';
+import { planetOrbitData, planetData } from '../utils/planetData';
+import { createSolarSystemScene, setupResizeHandler } from '../utils/sceneSetup';
 
 class OrbitControls {
   constructor(camera, domElement) {
@@ -97,59 +103,26 @@ class OrbitControls {
 export default function SolarSystemView() {
   const mountRef = useRef(null);
   const [focusedPlanet, setFocusedPlanet] = useState(null);
-  const focusedPlanetRef = useRef(focusedPlanet);
+  const focusedPlanetRef = useSyncedRef(focusedPlanet);
   const desiredRadiusRef = useRef(80); // Default camera distance 
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(1); // Earth days per second
-  const speedRef = useRef(simulationSpeed);
+  const speedRef = useSyncedRef(simulationSpeed);
   const [showOrbitLines, setShowOrbitLines] = useState(true); // New state for orbit lines visibility
   const orbitLinesRef = useRef([]); // Ref to store orbit line references
+  
+  // Animation state refs
+  const sceneRef = useRef();
+  const cameraRef = useRef();
+  const rendererRef = useRef();
+  const controlsRef = useRef();
+  const sunMeshRef = useRef();
+  const planetObjectsRef = useRef();
+  const startTimeRef = useRef(Date.now());
 
-  // Enhanced orbit data with realistic parameters - increased distances
-  const planetOrbitData = {
-    Mercury: { 
-      a: 8, b: 7.8, period: 88, inclination: 7, 
-      radius: 0.7, texture: 'textures/mercury.jpg' 
-    },
-    Venus: { 
-      a: 12, b: 11.9, period: 225, inclination: 3.4, 
-      radius: 1, texture: 'textures/venus.jpg' 
-    },
-    Earth: { 
-      a: 16, b: 15.98, period: 365, inclination: 0, 
-      radius: 1.2, texture: 'textures/earth.jpg' 
-    },
-    Mars: { 
-      a: 20, b: 19.8, period: 687, inclination: 1.85, 
-      radius: 1, texture: 'textures/mars.jpg' 
-    },
-    Jupiter: { 
-      a: 28, b: 27.9, period: 4333, inclination: 1.3, 
-      radius: 2, texture: 'textures/jupiter.jpg' 
-    },
-    Saturn: { 
-      a: 38, b: 37.8, period: 10759, inclination: 2.5, 
-      radius: 1.8, texture: 'textures/saturn.jpg', hasRings: true, ringType: 'saturn'
-    },
-    Uranus: { 
-      a: 48, b: 47.8, period: 30687, inclination: 0.8, 
-      radius: 1.4, texture: 'textures/uranus.jpg', hasRings: true, ringType: 'uranus'
-    },
-    Neptune: { 
-      a: 58, b: 57.8, period: 60190, inclination: 1.8, 
-      radius: 1.3, texture: 'textures/neptune.jpg', hasRings: true, ringType: 'neptune'
-    },
-    Pluto: { 
-      a: 68, b: 67.5, period: 90520, inclination: 17.2, 
-      radius: 0.5, texture: 'textures/pluto.jpg' 
-    },
-  };
 
-  // Keep the refs in sync with the state
+
+  // Set desired camera radius based on focused planet
   useEffect(() => {
-    focusedPlanetRef.current = focusedPlanet;
-    speedRef.current = simulationSpeed;
-    // Set desired camera radius based on focused planet
     if (focusedPlanet) {
       const orbit = planetOrbitData[focusedPlanet]?.a || 20;
       desiredRadiusRef.current = orbit + 5; // Increased buffer for better viewing
@@ -157,7 +130,7 @@ export default function SolarSystemView() {
       // Default zoomed-out view
       desiredRadiusRef.current = 80;
     }
-  }, [focusedPlanet, simulationSpeed]);
+  }, [focusedPlanet]);
 
   // Prevent page scrolling when interacting with 3D model Essential
   useEffect(() => {
@@ -182,16 +155,8 @@ export default function SolarSystemView() {
     };
   }, []);
 
-  // Fullscreen toggle
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      mountRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
+  // Use the fullscreen hook
+  const { isFullscreen, toggleFullscreen } = useFullscreen(mountRef);
 
   // Orbit lines toggle - much more efficient
   const toggleOrbitLines = () => {
@@ -204,18 +169,7 @@ export default function SolarSystemView() {
     });
   };
 
-  // Planet data for the selector
-  const planetData = {
-    Mercury: { texture: 'textures/mercury.jpg', symbol: '' },
-    Venus: { texture: 'textures/venus.jpg', symbol: '' },
-    Earth: { texture: 'textures/earth.jpg', symbol: '' },
-    Mars: { texture: 'textures/mars.jpg', symbol: '' },
-    Jupiter: { texture: 'textures/jupiter.jpg', symbol: '' },
-    Saturn: { texture: 'textures/saturn.jpg', symbol: '' },
-    Uranus: { texture: 'textures/uranus.jpg', symbol: '' },
-    Neptune: { texture: 'textures/neptune.jpg', symbol: '' },
-    Pluto: { texture: 'textures/pluto.jpg', symbol: '' },
-  };
+
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -223,205 +177,35 @@ export default function SolarSystemView() {
     const width = mountRef.current.clientWidth;
     const height = mountRef.current.clientHeight;
 
-    const scene = new THREE.Scene();
+    // Create complete solar system scene using utility
+    const { scene, camera, renderer, sun: sunMesh } = createSolarSystemScene(width, height, {
+      starCount: 5000,
+      starSpread: 2000,
+      sunRadius: 4,
+      sunTexture: "/textures/sun.jpg"
+    });
 
-    // Create simple starfield background
-    const starsGeometry = new THREE.BufferGeometry();
-    const starsMaterial = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 1 });
-    
-    const starsVertices = [];
-    for (let i = 0; i < 5000; i++) {
-      const x = (Math.random() - 0.5) * 2000;
-      const y = (Math.random() - 0.5) * 2000;
-      const z = (Math.random() - 0.5) * 2000;
-      starsVertices.push(x, y, z);
-    }
-    
-    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-    const starField = new THREE.Points(starsGeometry, starsMaterial);
-    scene.add(starField);
+    // Store refs
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+    rendererRef.current = renderer;
+    sunMeshRef.current = sunMesh;
 
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.set(0, 10, 40);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setClearColor(0x000011);
+    // Add renderer to DOM
     mountRef.current.appendChild(renderer.domElement);
 
+    // Setup controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.enablePan = false;
-
-    // Main sun light 
-    const pointLight = new THREE.PointLight(0xffffff, 35, 1000);
-    pointLight.position.set(0, 0, 0);
-    pointLight.castShadow = true;
-
-    pointLight.shadow.mapSize.width = 1024;
-    pointLight.shadow.mapSize.height = 1024;
-    scene.add(pointLight);
-
-    // Ambient light for overall illumination
-    const ambient = new THREE.AmbientLight(0x404040, 1.2);
-    scene.add(ambient);
-
-    // Additional directional light for better planet visibility
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(50, 50, 50);
-    scene.add(directionalLight);
-
-    const sunGeometry = new THREE.SphereGeometry(4, 64, 64);
-    const sunTexture = new THREE.TextureLoader().load("/textures/sun.jpg");
-    const sunMaterial = new THREE.MeshPhongMaterial({ map: sunTexture,
-      emissive: new THREE.Color(0xffaa00),
-      emissiveMap: sunTexture,
-      emissiveIntensity: 2,
-      shininess: 10
-     });
-    const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-    sunMesh.castShadow = false;
-    sunMesh.receiveShadow = false;
-    scene.add(sunMesh);
+    controlsRef.current = controls;
      
 
     const solarSystem = new THREE.Group();
     const planetObjects = {};
+    planetObjectsRef.current = planetObjects;
     const orbitLines = []; // Array to store orbit line references
     orbitLinesRef.current = orbitLines; // Store reference for external access
-
-    // Enhanced ellipse creation with inclination
-    const createOrbitEllipse = (a, b, inclination) => {
-      const curve = new THREE.EllipseCurve(0, 0, a, b, 0, 2 * Math.PI, false, 0);
-      const points = curve.getPoints(100);
-      const geometry = new THREE.BufferGeometry().setFromPoints(
-        points.map(p => {
-          const x = p.x;
-          const z = p.y;
-          const y = Math.sin(inclination * Math.PI / 180) * z;
-          return new THREE.Vector3(x, y, z);
-        })
-      );
-      const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.3 });
-      return new THREE.Line(geometry, material);
-    };
-
-    // Create procedural ring textures
-    const createRingTexture = (type, innerRadius, outerRadius) => {
-      const canvas = document.createElement('canvas');
-      const size = 512;
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      
-      // Clear canvas
-      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-      ctx.fillRect(0, 0, size, size);
-      
-      const center = size / 2;
-      const maxRadius = size / 2 - 10;
-      
-      // Scale radii to canvas
-      const scale = maxRadius / outerRadius;
-      const scaledInner = innerRadius * scale;
-      const scaledOuter = outerRadius * scale;
-      
-      switch (type) {
-        case 'saturn':
-          // Saturn's rings with Cassini Division
-          const gradient1 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
-          gradient1.addColorStop(0, 'rgba(212, 175, 55, 0.8)'); // Golden
-          gradient1.addColorStop(0.3, 'rgba(212, 175, 55, 0.9)');
-          gradient1.addColorStop(0.45, 'rgba(212, 175, 55, 0.3)'); // Cassini Division
-          gradient1.addColorStop(0.55, 'rgba(212, 175, 55, 0.3)'); // Cassini Division
-          gradient1.addColorStop(0.7, 'rgba(212, 175, 55, 0.9)');
-          gradient1.addColorStop(1, 'rgba(212, 175, 55, 0.6)');
-          
-          ctx.fillStyle = gradient1;
-          ctx.beginPath();
-          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
-          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
-          ctx.fill();
-          
-          // Add some noise/irregularities
-          for (let i = 0; i < 50; i++) {
-            const angle = Math.random() * 2 * Math.PI;
-            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
-            const x = center + Math.cos(angle) * radius;
-            const y = center + Math.sin(angle) * radius;
-            const opacity = Math.random() * 0.3;
-            
-            ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
-            ctx.beginPath();
-            ctx.arc(x, y, Math.random() * 3 + 1, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          break;
-          
-        case 'uranus':
-          // Uranus's dark, subtle rings
-          const gradient2 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
-          gradient2.addColorStop(0, 'rgba(74, 74, 74, 0.6)');
-          gradient2.addColorStop(0.5, 'rgba(74, 74, 74, 0.4)');
-          gradient2.addColorStop(1, 'rgba(74, 74, 74, 0.2)');
-          
-          ctx.fillStyle = gradient2;
-          ctx.beginPath();
-          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
-          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
-          ctx.fill();
-          
-          // Add subtle variations
-          for (let i = 0; i < 30; i++) {
-            const angle = Math.random() * 2 * Math.PI;
-            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
-            const x = center + Math.cos(angle) * radius;
-            const y = center + Math.sin(angle) * radius;
-            const opacity = Math.random() * 0.2;
-            
-            ctx.fillStyle = `rgba(74, 74, 74, ${opacity})`;
-            ctx.beginPath();
-            ctx.arc(x, y, Math.random() * 2 + 1, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          break;
-          
-        case 'neptune':
-          // Neptune's faint, clumpy rings
-          const gradient3 = ctx.createRadialGradient(center, center, scaledInner, center, center, scaledOuter);
-          gradient3.addColorStop(0, 'rgba(102, 102, 102, 0.5)');
-          gradient3.addColorStop(0.7, 'rgba(102, 102, 102, 0.3)');
-          gradient3.addColorStop(1, 'rgba(102, 102, 102, 0.1)');
-          
-          ctx.fillStyle = gradient3;
-          ctx.beginPath();
-          ctx.arc(center, center, scaledOuter, 0, 2 * Math.PI);
-          ctx.arc(center, center, scaledInner, 0, 2 * Math.PI, true);
-          ctx.fill();
-          
-          // Add clumpy structures (arcs)
-          for (let i = 0; i < 20; i++) {
-            const angle = Math.random() * 2 * Math.PI;
-            const radius = scaledInner + Math.random() * (scaledOuter - scaledInner);
-            const x = center + Math.cos(angle) * radius;
-            const y = center + Math.sin(angle) * radius;
-            const opacity = Math.random() * 0.4 + 0.2;
-            
-            ctx.fillStyle = `rgba(102, 102, 102, ${opacity})`;
-            ctx.beginPath();
-            ctx.arc(x, y, Math.random() * 4 + 2, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-          break;
-      }
-      
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      return texture;
-    };
 
     const createPlanetSystem = (planetName) => {
       const data = planetOrbitData[planetName];
@@ -488,7 +272,12 @@ export default function SolarSystemView() {
         }
         
         const rings = new THREE.Mesh(ringGeometry, ringMaterial);
-        rings.rotation.x = Math.PI / 2; // Rotate to be horizontal
+        if (data.ringType === 'uranus') {
+          rings.rotation.x = 0; // No horizontal tilt
+          rings.rotation.z = Math.PI * 98 / 180; // around 1.710 radians, vertical rings (Play around with this value)
+        } else {
+          rings.rotation.x = Math.PI / 2; // Rotate to be horizontal
+        }
         rings.position.y = 0; // Ensure rings are centered on the planet
         rings.renderOrder = 1; // Ensure rings render after the planet
         group.add(rings);
@@ -504,7 +293,7 @@ export default function SolarSystemView() {
       // Create inclined orbit ellipse and store reference
       const orbitLine = createOrbitEllipse(data.a, data.b, data.inclination);
       orbitLines.push(orbitLine);
-      scene.add(orbitLine); // Always add to scene, visibility controlled by material
+      scene.add(orbitLine); //  visibility controlled by material
       
       planetObjects[planetName] = { 
         mesh, 
@@ -530,7 +319,7 @@ export default function SolarSystemView() {
         });
         const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
         
-        // Position asteroids in a belt between Mars and Jupiter (updated distances)
+        // Position asteroids in a belt between Mars and Jupiter 
         const angle = Math.random() * 2 * Math.PI;
         const radius = 24 + Math.random() * 2; // Between 24-26 units (between Mars at 20 and Jupiter at 28)
         const x = Math.cos(angle) * radius;
@@ -555,63 +344,58 @@ export default function SolarSystemView() {
     // Add asteroid belt
     createAsteroidBelt();
 
-    // Animation loop with enhanced orbital mechanics
-    let startTime = Date.now();
-    const animate = () => {
-      requestAnimationFrame(animate);
-      const elapsedTime = (Date.now() - startTime) * 0.001; // Convert to seconds
-      
-      sunMesh.rotation.y += 0.002;
-
-      Object.keys(planetObjects).forEach(name => {
-        const planet = planetObjects[name];
-        // Calculate orbital position based on time, period, and speed
-        const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed
-        const x = Math.cos(t) * planet.a;
-        const z = Math.sin(t) * planet.b;
-        const y = Math.sin(planet.inclination * Math.PI / 180) * z;
-        
-        // Move the entire group (planet + rings) to the orbital position
-        planet.group.position.set(x, y, z);
-        planet.mesh.rotation.y += 0.02;
-      });
-
-      // Use the ref for focus
-      if (focusedPlanetRef.current && planetObjects[focusedPlanetRef.current]) {
-        const target = planetObjects[focusedPlanetRef.current].group; // Target the group instead of mesh
-        controls.target.lerp(target.position, 0.05);
-        // Smoothly interpolate camera radius
-        controls.spherical.radius += (desiredRadiusRef.current - controls.spherical.radius) * 0.08;
-      } else {
-        // Smoothly interpolate camera radius to default
-        controls.spherical.radius += (desiredRadiusRef.current - controls.spherical.radius) * 0.08;
-      }
-
-      controls.update();
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    const handleResize = () => {
-      if (!mountRef.current) return;
-      const width = mountRef.current.clientWidth;
-      const height = mountRef.current.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-
-    window.addEventListener("resize", handleResize);
+    // Setup resize handler
+    const cleanupResize = setupResizeHandler(camera, renderer, mountRef.current);
 
     return () => {
       if (renderer.domElement && mountRef.current?.contains(renderer.domElement)) {
         mountRef.current.removeChild(renderer.domElement);
       }
-      window.removeEventListener("resize", handleResize);
+      cleanupResize();
       renderer.dispose();
     };
   }, []); // Only run once on mount
+
+  // Animation callback using the custom hook
+  const animate = useCallback((deltaTime, time) => {
+    if (!sunMeshRef.current || !planetObjectsRef.current || !controlsRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) {
+      return;
+    }
+
+    const elapsedTime = (time - startTimeRef.current) * 0.001; // Convert to seconds
+    
+    sunMeshRef.current.rotation.y += 0.002;
+
+    Object.keys(planetObjectsRef.current).forEach(name => {
+      const planet = planetObjectsRef.current[name];
+      // Calculate orbital position based on time, period, and speed
+      const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed
+      const x = Math.cos(t) * planet.a;
+      const z = Math.sin(t) * planet.b;
+      const y = Math.sin(planet.inclination * Math.PI / 180) * z;
+      
+      // Move the entire group (planet + rings) to the orbital position
+      planet.group.position.set(x, y, z);
+      planet.mesh.rotation.y += 0.02;
+    });
+
+    // Use the ref for focus
+    if (focusedPlanetRef.current && planetObjectsRef.current[focusedPlanetRef.current]) {
+      const target = planetObjectsRef.current[focusedPlanetRef.current].group; // Target the group instead of mesh
+      controlsRef.current.target.lerp(target.position, 0.05);
+      // Smoothly interpolate camera radius
+      controlsRef.current.spherical.radius += (desiredRadiusRef.current - controlsRef.current.spherical.radius) * 0.08;
+    } else {
+      // Smoothly interpolate camera radius to default
+      controlsRef.current.spherical.radius += (desiredRadiusRef.current - controlsRef.current.spherical.radius) * 0.08;
+    }
+
+    controlsRef.current.update();
+    rendererRef.current.render(sceneRef.current, cameraRef.current);
+  }, []);
+
+  // Use the animation frame hook
+  useAnimationFrame(animate);
 
   return (
     <VStack spacing={6} w="100%" h="100vh" maxW="100vw" overflowX="hidden">

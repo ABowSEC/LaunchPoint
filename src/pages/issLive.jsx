@@ -51,7 +51,7 @@ export default function ISSLivePage() {
   return (
     <Box bg="bg.body" px={8} py={10} maxW="6xl" mx="auto">
       <Heading size="xl" textAlign="center" mb={6} bgGradient="linear(to-r, cyan.400, blue.500)" bgClip="text">
-        International Space Station — Live Feed & Telemetry
+        International Space Station Live Feed
       </Heading>
       <Text fontSize="md" color="text.secondary" textAlign="center" mb={10}>
         Watch the ISS live and track real-time stats such as its altitude, speed, and coordinates.

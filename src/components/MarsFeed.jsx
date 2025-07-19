@@ -188,7 +188,7 @@ function MarsFeed({ sol }) {
         if (data.photos && data.photos.length > 0) {
           setPhotos(data.photos);
         } else {
-          setError("No photos found for this sol. Try selecting a different Martian day.");
+          setError("No photos found for this sol. Try selecting a different Martian day.");//should be filtered already this is a extra procaution
         }
       } catch (error) {
         console.error("Failed to fetch Mars Photos:", error);

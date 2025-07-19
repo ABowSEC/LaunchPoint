@@ -12,6 +12,7 @@ import {
   BreadcrumbLink,
   Spinner,
 } from "@chakra-ui/react";
+import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { useState, useEffect } from "react";
 import MarsFeed from "../components/MarsFeed";
 
@@ -27,9 +28,9 @@ export default function MarsPage() {
         const url = `https://api.nasa.gov/mars-photos/api/v1/manifests/curiosity?api_key=${apiKey}`;
         const res = await fetch(url);
         const data = await res.json();
-        const solsWithPhotos = data.photo_manifest.photos.map((entry) => entry.sol);
-        setAvailableSols(solsWithPhotos);
-        setSol(solsWithPhotos[0]); // default to first valid sol
+        const solsWithPhotos = data.photo_manifest.photos.map((entry) => entry.sol);// ONLY PROVIDE DAYS WITH PHOTOS
+        setAvailableSols(solsWithPhotos.sort((a, b) => a - b));// sort in ascending order
+        setSol(solsWithPhotos[solsWithPhotos.length - 1]); // default to newest valid sol
       } catch (err) {
         console.error("Error fetching manifest:", err);
       } finally {
@@ -40,10 +41,21 @@ export default function MarsPage() {
     fetchManifest();
   }, []);
 
+
+
+  //NEW METHOD TO TRAVERSE SOLS TO BE IMPLEMENTED
+  const handleSolChange = (delta) => {
+    const newIndex = availableSols.indexOf(sol) + delta;
+    if (newIndex >= 0 && newIndex < availableSols.length) {
+      setSol(availableSols[newIndex]);
+    }
+  }//NEW METHOD TO TRAVERSE SOLS TO BE IMPLEMENTED
+
+
   const handleSelect = (e) => {
     const selected = e.target.value;
     setSol(selected);
-    // Don't navigate, just update the sol state to show photos on this page
+    // Don't navigate just update the sol state to show photos on this page
   };
 
   return (
@@ -64,7 +76,7 @@ export default function MarsPage() {
           </Heading>
 
           <Text fontSize="lg" color="text.secondary" maxW="600px" mx="auto" mt={4}>
-            Select a Martian day where NASA’s Curiosity rover captured photos.
+            Select a Martian day where NASA's Curiosity rover captured photos.
           </Text>
           <Divider mt={6} borderColor="border.default" />
         </Box>

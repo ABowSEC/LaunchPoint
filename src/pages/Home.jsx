@@ -88,7 +88,7 @@ export default function Home() {
         </VStack>
       );
     }
-
+  
     if (error) {
       return (
         <Box maxW="lg" mx="auto" p={6} borderRadius="lg" bg="red.50" border="1px" borderColor="red.200">
@@ -100,22 +100,50 @@ export default function Home() {
         </Box>
       );
     }
-
+  
     if (!apod) return <Text>No content available</Text>;
-
+  
     const isVideo = apod.media_type === "video";
+    const isImage = apod.media_type === "image";
+    const isOther = !isImage && !isVideo;
+  
     const description = apod.explanation || "";
     const shouldTruncate = description.length > 200;
     const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 200)}...`;
-
+  
     return (
       <VStack spacing={8}>
         <Box bg="bg.card" p={6} rounded="xl" shadow="lg" position="relative">
           {isVideo ? (
-            <AspectRatio ratio={16 / 9}>
-              <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
-            </AspectRatio>
-          ) : (
+            apod.thumbnail_url ? (
+              <Box position="relative" onClick={onOpen} cursor="pointer">
+                <Image 
+                  src={apod.thumbnail_url} 
+                  alt="Video thumbnail" 
+                  rounded="md" 
+                  maxH="500px"
+                  objectFit="cover"
+                  fallbackSrc="/hal9000.png"
+                />
+                <IconButton
+                  icon={<ArrowForwardIcon />}
+                  aria-label="Play video"
+                  position="absolute"
+                  top="50%"
+                  left="50%"
+                  transform="translate(-50%, -50%)"
+                  colorScheme="red"
+                  size="lg"
+                  isRound
+                  bg="whiteAlpha.800"
+                />
+              </Box>
+            ) : (
+              <AspectRatio ratio={16 / 9}>
+                <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
+              </AspectRatio>
+            )
+          ) : isImage ? (
             <>
               <Image 
                 src={apod.url} 
@@ -143,12 +171,34 @@ export default function Home() {
                 transition="all 0.3s ease"
               />
             </>
+          ) : (
+            <VStack spacing={4}>
+              <Image 
+                src="/hal9000.png" 
+                alt="No media available" 
+                rounded="md"
+                maxH="400px"
+                objectFit="contain"
+              />
+              <Text color="text.secondary" fontStyle="italic">
+                No image or video available for this APOD.
+              </Text>
+              <Button
+                as="a"
+                href="https://apod.nasa.gov/apod/astropix.html"
+                target="_blank"
+                leftIcon={<ExternalLinkIcon />}
+                colorScheme="teal"
+              >
+                View on NASA APOD
+              </Button>
+            </VStack>
           )}
         </Box>
-
+  
         <VStack spacing={4} textAlign="center">
           <Heading size="lg">{apod.title}</Heading>
-
+  
           <HStack justify="center" wrap="wrap" spacing={3}>
             {apod.date && (
               <Badge colorScheme="purple" px={3} py={1} borderRadius="full">
@@ -166,17 +216,17 @@ export default function Home() {
               </Badge>
             )}
           </HStack>
-
+  
           <Text fontSize="md" maxW="3xl" color="text.primary">
             {displayDescription}
           </Text>
-
+  
           {shouldTruncate && (
             <Button variant="link" colorScheme="teal" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
               {showFullDescription ? "Show Less" : "Read More"}
             </Button>
           )}
-
+  
           {apod.copyright && apod.copyright.trim() !== "" ? (
             <Text fontSize="sm" color="text.secondary" fontStyle="italic">
               Photography by {apod.copyright}
@@ -190,6 +240,7 @@ export default function Home() {
       </VStack>
     );
   };
+  
 
   return (
     <Box bg="bg.body" minH="100vh" py={16} px={6}>

@@ -55,19 +55,20 @@ export default function MarsPage() {
   const handleSelect = (e) => {
     const selected = e.target.value;
     setSol(selected);
-    // Don't navigate just update the sol state to show photos on this page
+    // no navigate just update the sol state to show photos on this page
   };
 
+  {/*breadcrumb not really neccessary if not going to new page to view sol images*/}
   return (
     <Container maxW="8xl" py={8}>
-      <Breadcrumb mb={6} fontSize="sm" color="text.secondary">
+      {/*<Breadcrumb mb={6} fontSize="sm" color="text.secondary">
         <BreadcrumbItem>
           <BreadcrumbLink href="/">Home</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbItem isCurrentPage>
           <BreadcrumbLink href="/mars">Mars</BreadcrumbLink>
         </BreadcrumbItem>
-      </Breadcrumb>
+      </Breadcrumb>*/}
 
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">

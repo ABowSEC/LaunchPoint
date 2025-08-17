@@ -103,9 +103,9 @@ export default function Home() {
   
     if (!apod) return <Text>No content available</Text>;
   
-    const isVideo = apod.media_type === "video";
+    const isVideo = apod.media_type === "video";//Minor issue from NASA API where it returns video as image.
     const isImage = apod.media_type === "image";
-    const isOther = !isImage && !isVideo;
+    const isOther = !isImage && !isVideo;//this is for the future to add other media types currently not supported from NASA API's like gifs. Need to ID the issue when APOD is not an image. 
   
     const description = apod.explanation || "";
     const shouldTruncate = description.length > 200;
@@ -443,7 +443,7 @@ export default function Home() {
                     <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
                       Description
                     </Heading>
-                    <Text fontSize="md" color="text.primary" lineHeight="1.6">
+                    <Text fontSize="md" color="white.500" lineHeight="1.6">
                       {apod.explanation}
                     </Text>
                   </Box>

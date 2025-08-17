@@ -71,6 +71,7 @@ function CountdownTimer({ launchTime }) {
     return () => clearInterval(timer);
   }, [launchTime]);
 
+{/*Graphics could be added*/}
   if (isLaunched) {
     return (
       <Badge colorScheme="green" px={3} py={1} borderRadius="full">
@@ -78,21 +79,21 @@ function CountdownTimer({ launchTime }) {
       </Badge>
     );
   }
-
+  {/*ADD FINAL COUNTDOWN EFFECTS FOR end of timer display*/}
   return (
     <HStack spacing={2} wrap="wrap">
       {timeLeft.days > 0 && (
         <Stat textAlign="center" minW="60px">
-          <StatNumber fontSize="lg" color="blue.400">{timeLeft.days}</StatNumber>
+          <StatNumber fontSize="lg" color="orange.400">{timeLeft.days}</StatNumber>
           <StatLabel fontSize="xs">Days</StatLabel>
         </Stat>
       )}
       <Stat textAlign="center" minW="60px">
-        <StatNumber fontSize="lg" color="purple.400">{timeLeft.hours}</StatNumber>
+        <StatNumber fontSize="lg" color="orange.400">{timeLeft.hours}</StatNumber>
         <StatLabel fontSize="xs">Hours</StatLabel>
       </Stat>
       <Stat textAlign="center" minW="60px">
-        <StatNumber fontSize="lg" color="teal.400">{timeLeft.minutes}</StatNumber>
+        <StatNumber fontSize="lg" color="orange.400">{timeLeft.minutes}</StatNumber>
         <StatLabel fontSize="xs">Min</StatLabel>
       </Stat>
       <Stat textAlign="center" minW="60px">
@@ -155,7 +156,7 @@ function LaunchCard({ launch }) {
   };
 
   const getAgencyLogo = (agency) => {
-    // Simple agency logo mapping - could be expanded
+    // Simple agency logo mapping // could be expanded
     const logos = {
       'NASA': '',
       'SpaceX':'',
@@ -187,7 +188,10 @@ function LaunchCard({ launch }) {
         <HStack justify="space-between" align="start">
           <VStack align="start" spacing={2} flex={1}>
             <HStack spacing={3}>
-              <Text fontSize="2xl">{getAgencyLogo(launch.launch_service_provider?.name || 'Unknown')}</Text>
+
+              {/*Currently NO LOGO MAPPED*/}
+              <Text fontSize="2xl">{getAgencyLogo(launch.launch_service_provider?.name || 'Unknown')}</Text> 
+    
               <VStack align="start" spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="text.primary">
                   {launch.name}
@@ -312,6 +316,7 @@ function LaunchFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //GET LAUNCH DATA
   useEffect(() => {
     const fetchLaunches = async () => {
       try {
@@ -349,7 +354,7 @@ function LaunchFeed() {
       </VStack>
     );
   }
-
+  {/*Error Catching/*/}
   if (error) {
     return (
       <Alert status="error" borderRadius="lg">
@@ -386,7 +391,7 @@ function LaunchFeed() {
       
       <Box textAlign="center" pt={4}>
         <Text fontSize="sm" color="text.secondary">
-          Showing {launches.length} upcoming launches • Data from The Space Devs API
+          Showing {launches.length} upcoming launches *** Data from The Space Devs API
         </Text>
       </Box>
     </VStack>

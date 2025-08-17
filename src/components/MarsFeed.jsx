@@ -166,6 +166,7 @@ function MarsFeed({ sol }) {
    * Mars Photos API for the Curiosity rover on the specified Martian day.
    * 
    * @param {number} sol - Martian day to fetch photos for
+   * TODO: add eart day conversion
    */
   useEffect(() => {
     const fetchPhotos = async () => {
@@ -188,7 +189,7 @@ function MarsFeed({ sol }) {
         if (data.photos && data.photos.length > 0) {
           setPhotos(data.photos);
         } else {
-          setError("No photos found for this sol. Try selecting a different Martian day.");//should be filtered already this is a extra procaution
+          setError("No photos found for this sol. Try selecting a different Martian day.");//Empty values should be filtered already this is a extra procaution
         }
       } catch (error) {
         console.error("Failed to fetch Mars Photos:", error);
@@ -252,7 +253,7 @@ function MarsFeed({ sol }) {
   return (
     <VStack spacing={6} w="100%">
       {/* Header with stats */}
-              <Box w="100%" textAlign="center" p={4} bg="gray.800" borderRadius="lg">
+              <Box w="100%" textAlign="center" p={4} borderRadius="lg">
           <Heading size="md" mb={2} bgGradient="linear(to-r, red.400, orange.400)" bgClip="text">Sol {sol} - Mars Rover Photos</Heading>
           <HStack justify="center" spacing={4} flexWrap="wrap">
             <Badge colorScheme="green" variant="subtle">
@@ -294,7 +295,7 @@ function MarsFeed({ sol }) {
                 <Select 
                   value={selectedCamera} 
                   onChange={(e) => setSelectedCamera(e.target.value)}
-                  bg="gray.700"
+
                   borderColor="gray.600"
                 >
                   {cameras.map(camera => (
@@ -323,7 +324,6 @@ function MarsFeed({ sol }) {
                       borderWidth="1px" 
                       borderRadius="lg" 
                       overflow="hidden"
-                      bg="gray.800"
                       transition="all 0.3s ease"
                       _hover={{
                         transform: "translateY(-4px)",
@@ -340,7 +340,7 @@ function MarsFeed({ sol }) {
                           width="100%" 
                           height="200px"
                           objectFit="cover"
-                                            fallbackSrc="/hal9000.png"
+                          fallbackSrc="/hal9000.png"
                         />
                         
                         {/* Action buttons overlay */}
@@ -471,10 +471,10 @@ function MarsFeed({ sol }) {
                 ))}
               </Accordion>
 
-              <Box p={4} bg="gray.800" borderRadius="lg" textAlign="center">
+              <Box p={4} borderRadius="lg" textAlign="center">
                 <Text fontSize="sm" color="text.secondary">
                   <strong>Did you know?</strong> Curiosity has 17 cameras total, making it the most well-documented rover on Mars. 
-                  Each camera serves a specific scientific or engineering purpose.
+                  Each camera serves a specific scientific or engineering purpose. 
                 </Text>
               </Box>
             </VStack>

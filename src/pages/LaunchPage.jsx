@@ -29,7 +29,7 @@ export default function LaunchPage() {
         <Box textAlign="center">
           <VStack spacing={4}>
             <HStack justify="center" spacing={3}>
-              <Icon as={StarIcon} w={8} h={8} color="blue.400" />
+              {/*<Icon as={StarIcon} w={8} h={8} color="blue.400" />*/}
               <Heading 
                 as="h1" 
                 size="2xl" 
@@ -86,7 +86,7 @@ export default function LaunchPage() {
           >
             <Icon as={FaRocket} w={8} h={8} color="blue.400" mb={3} />
             <Stat>
-              <StatNumber fontSize="2xl" bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">
+              <StatNumber fontSize="2xl" bgGradient="linear(to-r, blue.400, purple.500)" bgClip="text">{/*I Really Love Gradient desings TBH could add more pertaining to icons or graphics of rocket launching in card */}
                 Live
               </StatNumber>
               <StatLabel>Launch Tracking</StatLabel>

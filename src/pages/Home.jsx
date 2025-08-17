@@ -56,18 +56,32 @@ export default function Home() {
         setError(null);
 
         const apiKey = import.meta.env.VITE_NASA_API_KEY;
+        
+        if (!apiKey || apiKey === 'DEMO_KEY') {
+          console.warn('Using DEMO_KEY - limited to 1000 requests per hour');
+        }
+        
         const res = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         );
 
         if (!res.ok) {
-          throw new Error(`Failed to fetch APOD: ${res.status}`);
+          if (res.status === 429) {
+            throw new Error("NASA API rate limit exceeded. Please try again later.");
+          } else if (res.status === 403) {
+            throw new Error("Invalid API key. Please check your NASA API key configuration.");
+          } else if (res.status >= 500) {
+            throw new Error("NASA API service temporarily unavailable.");
+          } else {
+            throw new Error(`Failed to fetch APOD: ${res.status}`);
+          }
         }
 
         const data = await res.json();
         console.log('APOD Data:', data); // Debug log to see what we get
         setApod(data);
       } catch (err) {
+        console.error('APOD fetch error:', err);
         setError(err.message);
       } finally {
         setLoading(false);

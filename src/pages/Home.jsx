@@ -65,7 +65,7 @@ export default function Home() {
         }
 
         const data = await res.json();
-        console.log('APOD Data:', data); // Debug log to see what we get
+        console.log('APOD Data:', data); 
         setApod(data);
       } catch (err) {
         setError(err.message);
@@ -104,7 +104,7 @@ export default function Home() {
     if (!apod) return <Text>No content available</Text>;
   
     const isVideo = apod.media_type === "video";
-    const isImage = apod.media_type === "image";
+    const isImage = apod.media_type === "image" || /\.(gif|jpe?g|png)$/i.test(apod.url);//Allows even if labeled other if ends with /\(allowed)$/i
     const isOther = !isImage && !isVideo;
   
     const description = apod.explanation || "";

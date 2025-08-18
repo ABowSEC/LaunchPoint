@@ -154,18 +154,20 @@ function LaunchCard({ launch }) {
       timeZoneName: 'short'
     });
   };
-
+//CHANGE IMAGES TO WEBP (more efficent than jpg)
   const getAgencyLogo = (agency) => {
-    // Simple agency logo mapping // could be expanded
+    if (!agency) return "/logos/defaultAgency.jpg"
     const logos = {
-      'NASA': '',
-      'SpaceX':'',
-      'ULA': '',
-      'ESA': '',
-      'JAXA': '',
-      'Roscosmos': ''
+      'NASA': "/logos/nasa.jpg",
+      'SpaceX':"/logos/spacex.jpeg",
+      'ULA': "/logos/ula.jpg",
+      'ESA': "/logos/esa.jpg",
+      'JAXA': "/logos/jaxa.jpg",
+      'Russian Federal Space Agency (ROSCOSMOS)': "/logos/Roscosmos.jpg",
+      'China Aerospace Science and Technology Corporation' : "/logos/casc.jpg",
+      'Blue Origin' : "/logos/blueorigin.jpg"
     };
-    return logos[agency] || '';
+    return logos[agency] || "/logos/defaultAgency";
   };
 
   return (
@@ -189,8 +191,18 @@ function LaunchCard({ launch }) {
           <VStack align="start" spacing={2} flex={1}>
             <HStack spacing={3}>
 
-              {/*Currently NO LOGO MAPPED*/}
-              <Text fontSize="2xl">{getAgencyLogo(launch.launch_service_provider?.name || 'Unknown')}</Text> 
+              
+              <Image   
+                src={getAgencyLogo(launch.launch_service_provider?.name)} 
+                alt={'${launch.launch_service_provider?.name} logo'} 
+                boxSize="60px" objectFit="contain" 
+                fallbackSrc= "/logos/defaultAgency.jpg"
+        
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logos/defaultAgency.jpg"
+
+                }}/> 
     
               <VStack align="start" spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="text.primary">

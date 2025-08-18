@@ -56,18 +56,32 @@ export default function Home() {
         setError(null);
 
         const apiKey = import.meta.env.VITE_NASA_API_KEY;
+        
+        if (!apiKey || apiKey === 'DEMO_KEY') {
+          console.warn('Using DEMO_KEY - limited to 1000 requests per hour');
+        }
+        
         const res = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         );
 
         if (!res.ok) {
-          throw new Error(`Failed to fetch APOD: ${res.status}`);
+          if (res.status === 429) {
+            throw new Error("NASA API rate limit exceeded. Please try again later.");
+          } else if (res.status === 403) {
+            throw new Error("Invalid API key. Please check your NASA API key configuration.");
+          } else if (res.status >= 500) {
+            throw new Error("NASA API service temporarily unavailable.");
+          } else {
+            throw new Error(`Failed to fetch APOD: ${res.status}`);
+          }
         }
 
         const data = await res.json();
         console.log('APOD Data:', data); 
         setApod(data);
       } catch (err) {
+        console.error('APOD fetch error:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -103,9 +117,9 @@ export default function Home() {
   
     if (!apod) return <Text>No content available</Text>;
   
-    const isVideo = apod.media_type === "video";
+    const isVideo = apod.media_type === "video";//Minor issue from NASA API where it returns video as image.
     const isImage = apod.media_type === "image" || /\.(gif|jpe?g|png)$/i.test(apod.url);//Allows even if labeled other if ends with /\(allowed)$/i
-    const isOther = !isImage && !isVideo;
+    const isOther = !isImage && !isVideo;//this is for the future to add other media types currently not supported from NASA API's like gifs. Need to ID the issue when APOD is not an image. 
   
     const description = apod.explanation || "";
     const shouldTruncate = description.length > 200;
@@ -443,7 +457,7 @@ export default function Home() {
                     <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
                       Description
                     </Heading>
-                    <Text fontSize="md" color="text.primary" lineHeight="1.6">
+                    <Text fontSize="md" color="white.500" lineHeight="1.6">
                       {apod.explanation}
                     </Text>
                   </Box>

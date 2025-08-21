@@ -47,10 +47,11 @@
 ```
 LaunchPoint/
 ├── public/
-│   ├── textures/          # Planet texture images
-│   │   └── hal9000.png       # App icon
+│   ├── textures/         # Planet texture images
 │   ├── skyBox/           # 3D skybox textures
-│   └── hal9000.png       # App icon
+│   └── logos/            # Space company logo images
+│   └── hal9000.png   # App icon
+
 ├── src/
 │   ├── components/       # Reusable React components
 │   │   ├── ui/          # UI utility components

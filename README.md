@@ -42,35 +42,6 @@
 - **Git** - Version control
 - **Environment Variables** - Secure API key management
 
-## Project Structure
-
-```
-LaunchPoint/
-├── public/
-│   ├── textures/         # Planet texture images
-│   ├── skyBox/           # 3D skybox textures
-│   └── logos/            # Space company logo images
-│   └── hal9000.png   # App icon
-
-├── src/
-│   ├── components/       # Reusable React components
-│   │   ├── ui/          # UI utility components
-│   │   ├── MarsFeed.jsx # Mars photo display component
-│   │   ├── Planet.jsx   # 3D planet class
-│   │   ├── SolarSystemView.jsx # 3D solar system
-│   │   └── Timeline.jsx # Space history timeline
-│   ├── pages/           # Main application pages
-│   │   ├── Home.jsx     # Landing page with APOD
-│   │   ├── MarsPage.jsx # Mars photos page
-│   │   ├── LaunchPage.jsx # Launch tracker
-│   │   ├── issLive.jsx  # ISS live feed
-│   │   └── SolarSimPage.jsx # 3D solar system page
-│   ├── App.jsx          # Main application component
-│   ├── main.jsx         # Application entry point
-│   └── theme.js         # Chakra UI theme configuration
-├── package.json         # Dependencies and scripts
-└── README.md           # This file
-```
 
 ## Getting Started
 
@@ -251,8 +222,3 @@ This project is licensed under the MIT License
 
 - **NASA** for providing free access to space data and APIs
 
-
-
----
-
-**Built with Love for space exploration and education**

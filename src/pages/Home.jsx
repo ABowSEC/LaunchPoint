@@ -260,13 +260,7 @@ export default function Home() {
     <Box bg="bg.body" minH="100vh" py={16} px={6}>
       <Container maxW="7xl">
         <HStack justify="space-between" mb={6}>
-          <Box />
-          <IconButton
-            aria-label="Toggle theme"
-            icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
-            onClick={toggleColorMode}
-            variant="ghost"
-          />
+          <Box />  
         </HStack>
 
         <VStack spacing={10} textAlign="center">

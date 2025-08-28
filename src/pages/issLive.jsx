@@ -49,7 +49,7 @@ export default function ISSLivePage() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
       
-      const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544", {
+      const res = await fetch("http://api.open-notify.org/iss-now.json", {
         signal: controller.signal
       });
       

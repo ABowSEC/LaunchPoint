@@ -1,0 +1,38 @@
+# Node-related
+node_modules/
+dist/
+build/
+.vite/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# OS-specific
+.DS_Store         # macOS
+Thumbs.db         # Windows
+
+# Editor-specific
+.vscode/
+.idea/
+*.log
+*.swp
+*.swo
+
+# TypeScript/JS build artifacts (if used)
+*.tsbuildinfo
+
+# Coverage/test/output folders
+coverage/
+test-output/
+*.log
+
+# Image cache or user-uploaded temp data
+public/uploads/
+temp/
+
+# Misc
+*.bak
+*.tmp
+*.orig

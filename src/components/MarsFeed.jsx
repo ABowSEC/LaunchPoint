@@ -3,13 +3,10 @@ import {
   Box,
   Image,
   Text,
-  VStack,
-  HStack,
   SimpleGrid,
   Spinner,
   Button,
-  Select,
-  Badge,
+  HStack,
   Alert,
   AlertIcon,
   AlertTitle,
@@ -21,543 +18,163 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
-  IconButton,
-  Tooltip,
   Flex,
-  Heading,
-  Divider,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
-  List,
-  ListItem,
-  ListIcon,
+  Badge,
 } from "@chakra-ui/react";
-import { ExternalLinkIcon, ViewIcon, DownloadIcon, InfoIcon, SearchIcon } from "@chakra-ui/icons";
 
-/**
- * Camera information database for Curiosity rover cameras
- * 
- * This object contains detailed information about each camera aboard NASA's Curiosity rover,
- * including their purpose, specifications, and capabilities. This data helps users understand
- * what they're looking at when viewing Mars photos.
- * 
- * TODO: Move to external database/API for better maintainability
- * 
- * @type {Object.<string, Object>}
- */
-const cameraInfo = {
-  FHAZ: {
-    name: "Front Hazard Avoidance Camera",
-    fullName: "Front Hazard Avoidance Camera",
-    description: "Located on the front of the rover, this camera helps identify potential hazards and obstacles in the rover's path.",
-    purpose: "Navigation and hazard avoidance",
-    location: "Front of rover",
-    resolution: "1 megapixel",
-    color: "Black and white",
-    features: ["Hazard detection", "Navigation assistance", "Path planning"]
-  },
-  RHAZ: {
-    name: "Rear Hazard Avoidance Camera", 
-    fullName: "Rear Hazard Avoidance Camera",
-    description: "Located on the back of the rover, this camera provides rearward visibility for backing up and maneuvering.",
-    purpose: "Rear navigation and hazard avoidance",
-    location: "Rear of rover",
-    resolution: "1 megapixel",
-    color: "Black and white",
-    features: ["Rear hazard detection", "Backing up assistance", "Maneuvering support"]
-  },
-  MAST: {
-    name: "Mast Camera",
-    fullName: "Mast Camera",
-    description: "The main science camera mounted on the rover's mast, providing high-resolution color images of the Martian landscape.",
-    purpose: "Primary science imaging",
-    location: "Rover mast",
-    resolution: "2 megapixels",
-    color: "Color",
-    features: ["High-resolution imaging", "Panoramic views", "Scientific analysis"]
-  },
-  CHEMCAM: {
-    name: "Chemistry and Camera",
-    fullName: "Chemistry and Camera",
-    description: "Combines a camera with a laser spectrometer to analyze the chemical composition of rocks and soil from a distance.",
-    purpose: "Chemical analysis and imaging",
-    location: "Rover mast",
-    resolution: "1 megapixel",
-    color: "Color",
-    features: ["Laser spectroscopy", "Chemical analysis", "Remote sensing"]
-  },
-  MAHLI: {
-    name: "Mars Hand Lens Imager",
-    fullName: "Mars Hand Lens Imager",
-    description: "A close-up camera that works like a geologist's hand lens, providing detailed images of rocks and soil at very close range.",
-    purpose: "Microscopic imaging",
-    location: "Rover arm",
-    resolution: "2 megapixels",
-    color: "Color",
-    features: ["Close-up imaging", "Microscopic detail", "Geological analysis"]
-  },
-  MARDI: {
-    name: "Mars Descent Imager",
-    fullName: "Mars Descent Imager",
-    description: "Captured images during the rover's descent to Mars, providing a unique perspective of the landing site.",
-    purpose: "Descent documentation",
-    location: "Rover body",
-    resolution: "1.3 megapixels",
-    color: "Color",
-    features: ["Descent imaging", "Landing site documentation", "Terrain mapping"]
-  },
-  NAVCAM: {
-    name: "Navigation Camera",
-    fullName: "Navigation Camera",
-    description: "Stereo cameras that provide 3D vision for navigation, helping the rover understand its surroundings and plan safe paths.",
-    purpose: "Navigation and 3D mapping",
-    location: "Rover mast",
-    resolution: "1 megapixel",
-    color: "Black and white",
-    features: ["3D vision", "Navigation planning", "Stereo imaging"]
-  }
-};
+const PAGE_SIZE = 24;
 
-/**
- * MarsFeed Component
- * 
- * Displays Mars rover photos from NASA's API with filtering, viewing, and educational features.
- * This component fetches photos for a specific Martian day (sol) and provides an interactive
- * interface for browsing, filtering by camera, and learning about the rover's camera systems.
- * 
- * @param {Object} props - Component props
- * @param {number} props.sol - Martian day (sol) to fetch photos for
- * @returns {JSX.Element} The MarsFeed component
- * 
- * @example
- * <MarsFeed sol={1000} />
- */
-function MarsFeed({ sol }) {
-  // State for managing photos data
+export default function MarsFeed({ rover, page, onPageChange }) {
   const [photos, setPhotos] = useState([]);
+  const [totalHits, setTotalHits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // State for UI interactions
-  const [selectedCamera, setSelectedCamera] = useState("all");
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selected, setSelected] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Get unique cameras from photos for filter dropdown
-  const cameras = ["all", ...new Set(photos.map(photo => photo.camera.name))];
-
-  // Filter photos by selected camera
-  const filteredPhotos = selectedCamera === "all" 
-    ? photos 
-    : photos.filter(photo => photo.camera.name === selectedCamera);
-
-  /**
-   * Fetch Mars photos for the specified sol
-   * 
-   * This effect runs whenever the sol prop changes. It fetches photos from NASA's
-   * Mars Photos API for the Curiosity rover on the specified Martian day.
-   * 
-   * @param {number} sol - Martian day to fetch photos for
-   * TODO: add eart day conversion
-   */
   useEffect(() => {
     const fetchPhotos = async () => {
-      if (!sol) return;
-      
       setLoading(true);
       setError(null);
-      
       try {
-        const apiKey = import.meta.env.VITE_NASA_API_KEY;
-        const url = `https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=${sol}&api_key=${apiKey}`;
-
+        const query = encodeURIComponent(`mars ${rover} rover`);
+        const url = `https://images-api.nasa.gov/search?q=${query}&media_type=image&page_size=${PAGE_SIZE}&page=${page}`;
         const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
-        
-        if (data.photos && data.photos.length > 0) {
-          setPhotos(data.photos);
-        } else {
-          setError("No photos found for this sol. Try selecting a different Martian day.");//Empty values should be filtered already this is a extra procaution
-        }
-      } catch (error) {
-        console.error("Failed to fetch Mars Photos:", error);
-        setError("Failed to load photos. Please check your internet connection and try again.");
+        setPhotos(data.collection.items || []);
+        setTotalHits(data.collection.metadata?.total_hits || 0);
+      } catch (err) {
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPhotos();
-  }, [sol]);
+  }, [rover, page]);
 
-  /**
-   * Handle photo click to open modal
-   * 
-   * @param {Object} photo - Photo object from NASA API
-   */
-  const handlePhotoClick = (photo) => {
-    setSelectedPhoto(photo);
+  const handleOpen = (photo) => {
+    setSelected(photo);
     onOpen();
   };
 
-  /**
-   * Download photo to user's device
-   * 
-   * Creates a temporary link element to trigger download of the photo
-   * with a descriptive filename including photo ID and date.
-   * 
-   * @param {Object} photo - Photo object from NASA API
-   */
-  const handleDownload = (photo) => {
-    const link = document.createElement('a');
-    link.href = photo.img_src;
-    link.download = `mars_photo_${photo.id}_${photo.earth_date}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const totalPages = Math.ceil(totalHits / PAGE_SIZE);
 
   if (loading) {
     return (
-      <VStack spacing={6} py={10}>
-        <Spinner size="xl" color="red.400" />
-        <Text color="text.secondary">Loading Mars photos...</Text>
-      </VStack>
+      <Flex justify="center" py={16}>
+        <Spinner size="xl" color="orange.400" thickness="4px" />
+      </Flex>
     );
   }
 
   if (error) {
     return (
-      <Alert status="error" borderRadius="lg">
+      <Alert status="error" borderRadius="md">
         <AlertIcon />
-        <Box>
-          <AlertTitle>Error loading photos!</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Box>
+        <AlertTitle>Failed to load photos</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
 
+  if (photos.length === 0) {
+    return (
+      <Alert status="info" borderRadius="md">
+        <AlertIcon />
+        <AlertTitle>No photos found</AlertTitle>
+        <AlertDescription>No results for {rover} rover.</AlertDescription>
+      </Alert>
+    );
+  }
+
+  const thumbnailFor = (photo) => photo?.links?.[0]?.href ?? "";
+  const metaFor = (photo) => photo?.data?.[0] ?? {};
+
   return (
-    <VStack spacing={6} w="100%">
-      {/* Header with stats */}
-              <Box w="100%" textAlign="center" p={4} borderRadius="lg">
-          <Heading size="md" mb={2} bgGradient="linear(to-r, red.400, orange.400)" bgClip="text">Sol {sol} - Mars Rover Photos</Heading>
-          <HStack justify="center" spacing={4} flexWrap="wrap">
-            <Badge colorScheme="green" variant="subtle">
-              {photos.length} Total Photos
-            </Badge>
-            <Badge colorScheme="blue" variant="subtle">
-              {filteredPhotos.length} Filtered
-            </Badge>
-            <Badge colorScheme="purple" variant="subtle">
-              Curiosity Rover
-            </Badge>
-          </HStack>
-        </Box>
+    <Box>
+      <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing={3} mb={6}>
+        {photos.map((photo) => {
+          const meta = metaFor(photo);
+          return (
+            <Box
+              key={meta.nasa_id}
+              cursor="pointer"
+              borderRadius="md"
+              overflow="hidden"
+              bg="gray.800"
+              _hover={{ opacity: 0.85, transform: "scale(1.02)" }}
+              transition="all 0.15s"
+              onClick={() => handleOpen(photo)}
+            >
+              <Image
+                src={thumbnailFor(photo)}
+                alt={meta.title}
+                w="100%"
+                h="120px"
+                objectFit="cover"
+                loading="lazy"
+              />
+            </Box>
+          );
+        })}
+      </SimpleGrid>
 
-      {/* Main Content Tabs */}
-      <Tabs variant="enclosed" colorScheme="red" w="100%">
-        <TabList>
-          <Tab>
-            <HStack spacing={2}>
-              <ViewIcon />
-              <Text>Photos</Text>
-            </HStack>
-          </Tab>
-          <Tab>
-            <HStack spacing={2}>
-              <InfoIcon />
-              <Text>Camera Info</Text>
-            </HStack>
-          </Tab>
-        </TabList>
-
-        <TabPanels>
-          {/* Photos Tab */}
-          <TabPanel>
-            <VStack spacing={6}>
-              {/* Camera Filter */}
-              <Box w="100%" maxW="400px">
-                <Text fontSize="sm" color="text.secondary" mb={2}>Filter by Camera:</Text>
-                <Select 
-                  value={selectedCamera} 
-                  onChange={(e) => setSelectedCamera(e.target.value)}
-
-                  borderColor="gray.600"
-                >
-                  {cameras.map(camera => (
-                    <option key={camera} value={camera}>
-                      {camera === "all" ? "All Cameras" : camera.toUpperCase()}
-                    </option>
-                  ))}
-                </Select>
-              </Box>
-
-              <Divider />
-
-              {/* Photo Grid */}
-              {filteredPhotos.length === 0 ? (
-                <Alert status="info" borderRadius="lg">
-                  <AlertIcon />
-                  <AlertDescription>
-                    No photos found for the selected camera. Try a different filter.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <SimpleGrid columns={[1, 2, 3, 4]} spacing={6} w="100%">
-                  {filteredPhotos.map((photo) => (
-                    <Box 
-                      key={photo.id} 
-                      borderWidth="1px" 
-                      borderRadius="lg" 
-                      overflow="hidden"
-                      transition="all 0.3s ease"
-                      _hover={{
-                        transform: "translateY(-4px)",
-                        boxShadow: "xl",
-                        borderColor: "red.400"
-                      }}
-                      cursor="pointer"
-                      onClick={() => handlePhotoClick(photo)}
-                    >
-                      <Box position="relative">
-                        <Image 
-                          src={photo.img_src} 
-                          alt={`Mars photo ${photo.id}`} 
-                          width="100%" 
-                          height="200px"
-                          objectFit="cover"
-                          fallbackSrc="/hal9000.png"
-                        />
-                        
-                        {/* Action buttons overlay */}
-                        <Box 
-                          position="absolute" 
-                          top={2} 
-                          right={2} 
-                          opacity={0}
-                          transition="opacity 0.3s ease"
-                          _groupHover={{ opacity: 1 }}
-                        >
-                          <HStack spacing={1}>
-                            <Tooltip label="Download">
-                              <IconButton
-                                size="sm"
-                                icon={<DownloadIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownload(photo);
-                                }}
-                                colorScheme="blue"
-                                variant="solid"
-                              />
-                            </Tooltip>
-                            <Tooltip label="View Full Size">
-                              <IconButton
-                                size="sm"
-                                icon={<ExternalLinkIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(photo.img_src, '_blank');
-                                }}
-                                colorScheme="green"
-                                variant="solid"
-                              />
-                            </Tooltip>
-                          </HStack>
-                        </Box>
-                      </Box>
-                      
-                      <Box p={4}>
-                        <VStack align="start" spacing={2}>
-                          <Badge colorScheme="red" variant="subtle" fontSize="xs">
-                            {photo.camera.name.toUpperCase()}
-                          </Badge>
-                          <Text fontSize="sm" color="text.secondary">
-                            Earth Date: {photo.earth_date}
-                          </Text>
-                          <Text fontSize="xs" color="text.secondary">
-                            Photo ID: {photo.id}
-                          </Text>
-                        </VStack>
-                      </Box>
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              )}
-            </VStack>
-          </TabPanel>
-
-          {/* Camera Info Tab */}
-          <TabPanel>
-            <VStack spacing={6} align="stretch">
-              <Box textAlign="center" p={4} bg="gray.800" borderRadius="lg">
-                <Heading size="md" mb={2} bgGradient="linear(to-r, red.400, orange.400)" bgClip="text">Curiosity Rover Cameras</Heading>
-                <Text color="text.secondary">
-                  Learn about the different cameras aboard NASA's Curiosity rover and their scientific purposes.
-                </Text>
-              </Box>
-
-              <Accordion allowMultiple>
-                {Object.entries(cameraInfo).map(([cameraCode, info]) => (
-                  <AccordionItem key={cameraCode} border="1px solid" borderColor="gray.600" borderRadius="lg" mb={2}>
-                    <AccordionButton 
-                      py={4} 
-                      _expanded={{ bg: 'red.500', color: 'white' }}
-                      _hover={{ bg: 'gray.700' }}
-                    >
-                      <Box flex="1" textAlign="left">
-                        <HStack spacing={3}>
-                          <Badge colorScheme="red" variant="solid" fontSize="xs">
-                            {cameraCode}
-                          </Badge>
-                          <Text fontWeight="bold">{info.name}</Text>
-                        </HStack>
-                      </Box>
-                      <AccordionIcon />
-                    </AccordionButton>
-                    <AccordionPanel pb={4} bg="gray.700">
-                      <VStack spacing={4} align="stretch">
-                        <Text fontSize="md" color="text.primary">
-                          {info.description}
-                        </Text>
-                        
-                        <SimpleGrid columns={[1, 2]} spacing={4}>
-                          <Box>
-                            <Text fontSize="sm" color="text.secondary" fontWeight="bold">Purpose</Text>
-                            <Text fontSize="sm">{info.purpose}</Text>
-                          </Box>
-                          <Box>
-                            <Text fontSize="sm" color="text.secondary" fontWeight="bold">Location</Text>
-                            <Text fontSize="sm">{info.location}</Text>
-                          </Box>
-                          <Box>
-                            <Text fontSize="sm" color="text.secondary" fontWeight="bold">Resolution</Text>
-                            <Text fontSize="sm">{info.resolution}</Text>
-                          </Box>
-                          <Box>
-                            <Text fontSize="sm" color="text.secondary" fontWeight="bold">Color</Text>
-                            <Text fontSize="sm">{info.color}</Text>
-                          </Box>
-                        </SimpleGrid>
-
-                        <Box>
-                          <Text fontSize="sm" color="text.secondary" fontWeight="bold" mb={2}>Key Features</Text>
-                          <List spacing={1}>
-                            {info.features.map((feature, index) => (
-                              <ListItem key={index} fontSize="sm">
-                                <ListIcon as={SearchIcon} color="red.400" />
-                                {feature}
-                              </ListItem>
-                            ))}
-                          </List>
-                        </Box>
-                      </VStack>
-                    </AccordionPanel>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-
-              <Box p={4} borderRadius="lg" textAlign="center">
-                <Text fontSize="sm" color="text.secondary">
-                  <strong>Did you know?</strong> Curiosity has 17 cameras total, making it the most well-documented rover on Mars. 
-                  Each camera serves a specific scientific or engineering purpose. 
-                </Text>
-              </Box>
-            </VStack>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+      {/* Pagination */}
+      <Flex justify="center" align="center" gap={4}>
+        <Button
+          size="sm"
+          onClick={() => onPageChange(page - 1)}
+          isDisabled={page <= 1}
+          colorScheme="orange"
+          variant="outline"
+        >
+          Prev
+        </Button>
+        <Text color="text.secondary" fontSize="sm">
+          Page {page} of {totalPages.toLocaleString()}
+        </Text>
+        <Button
+          size="sm"
+          onClick={() => onPageChange(page + 1)}
+          isDisabled={page >= totalPages}
+          colorScheme="orange"
+          variant="outline"
+        >
+          Next
+        </Button>
+      </Flex>
 
       {/* Photo Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+      <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered>
         <ModalOverlay />
-        <ModalContent bg="gray.800" color="white">
-          <ModalHeader>
-            <HStack justify="space-between" align="center">
-              <Text>Mars Photo Details</Text>
-              <HStack spacing={2}>
-                <Button
-                  leftIcon={<DownloadIcon />}
-                  size="sm"
-                  onClick={() => selectedPhoto && handleDownload(selectedPhoto)}
-                  colorScheme="blue"
-                >
-                  Download
-                </Button>
-                <Button
-                  leftIcon={<ExternalLinkIcon />}
-                  size="sm"
-                  onClick={() => selectedPhoto && window.open(selectedPhoto.img_src, '_blank')}
-                  colorScheme="green"
-                >
-                  Open Full Size
-                </Button>
-              </HStack>
-            </HStack>
+        <ModalContent bg="gray.900">
+          <ModalHeader color="white" pr={10} fontSize="md">
+            {metaFor(selected)?.title}
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton color="white" />
           <ModalBody pb={6}>
-            {selectedPhoto && (
-              <VStack spacing={4}>
-                <Image 
-                  src={selectedPhoto.img_src} 
-                  alt={`Mars photo ${selectedPhoto.id}`}
-                  maxH="60vh"
-                  objectFit="contain"
-                  borderRadius="lg"
-                />
-                <VStack spacing={3} w="100%" textAlign="left">
-                  <Box w="100%" p={4} bg="gray.700" borderRadius="lg">
-                    <Heading size="sm" mb={3}>Photo Information</Heading>
-                    <SimpleGrid columns={[1, 2]} spacing={4}>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Rover</Text>
-                        <Text fontWeight="bold">{selectedPhoto.rover.name}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Camera</Text>
-                        <Text fontWeight="bold">{selectedPhoto.camera.full_name}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Earth Date</Text>
-                        <Text fontWeight="bold">{selectedPhoto.earth_date}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Sol</Text>
-                        <Text fontWeight="bold">{selectedPhoto.sol}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Photo ID</Text>
-                        <Text fontWeight="bold">{selectedPhoto.id}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Launch Date</Text>
-                        <Text fontWeight="bold">{selectedPhoto.rover.launch_date}</Text>
-                      </Box>
-                    </SimpleGrid>
-                  </Box>
-                </VStack>
-              </VStack>
+            <Image
+              src={thumbnailFor(selected)}
+              alt={metaFor(selected)?.title}
+              w="100%"
+              borderRadius="md"
+              mb={4}
+            />
+            {metaFor(selected)?.date_created && (
+              <Badge colorScheme="orange" mb={2}>
+                {new Date(metaFor(selected).date_created).toLocaleDateString()}
+              </Badge>
+            )}
+            {metaFor(selected)?.description && (
+              <Text color="gray.300" fontSize="sm" mt={2}>
+                {metaFor(selected).description}
+              </Text>
             )}
           </ModalBody>
         </ModalContent>
       </Modal>
-    </VStack>
+    </Box>
   );
 }
-
-export default MarsFeed;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Box, Flex, Text, Button, HStack, VStack, IconButton, Checkbox } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, HStack, VStack, IconButton, SimpleGrid, Divider } from "@chakra-ui/react";
 import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
+import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from "three";
 import Planet from "./Planet";
 import { createRingTexture, createOrbitEllipse } from '../utils/threeHelpers';
@@ -398,293 +399,285 @@ export default function SolarSystemView() {
   useAnimationFrame(animate);
 
   return (
-    <VStack spacing={6} w="100%" h="100vh" maxW="100vw" overflowX="hidden">
-      {/* 3D Solar System Viewer */}
+    <Box position="relative" w="100%" h="100vh" overflow="hidden" bg="black">
+
+      {/* ── Three.js canvas ──────────────────────────────── */}
       <Box
         ref={mountRef}
-        w="100%"
-        h={{ base: "50vh", md: "70vh" }}
-        minH="350px"
-        bg="gray.900"
-        borderRadius="lg"
-        overflow="hidden"
-        boxShadow="2xl"
-        border="1px solid"
-        borderColor="whiteAlpha.200"
-        position="relative"
-      >
-        <IconButton
-          position="absolute"
-          top={2}
-          right={2}
-          zIndex={10}
-          aria-label="Toggle fullscreen"
-          icon={isFullscreen ? <CloseIcon /> : <ExternalLinkIcon />}
-          onClick={toggleFullscreen}
-          colorScheme="blue"
-          size="sm"
-          variant="solid"
-          opacity={0.8}
-          _hover={{ opacity: 1 }}
-        />
-        
-        {/* Orbit Lines Toggle Checkbox */}
-        <Box
-          position="absolute"
-          top={2}
-          left={2}
-          zIndex={10}
-          bg="rgba(0, 0, 0, 0.7)"
-          borderRadius="md"
-          p={2}
-          backdropFilter="blur(5px)"
-          border="1px solid"
-          borderColor="whiteAlpha.200"
-        >
-          <Checkbox
-            isChecked={showOrbitLines}
-            onChange={toggleOrbitLines}
-            colorScheme="green"
-            size="sm"
-          >
-            <Text fontSize="xs" color="white" fontWeight="medium">
-              Orbits
-            </Text>
-          </Checkbox>
-        </Box>
-      </Box>
+        position="absolute"
+        top={0} left={0} right={0} bottom={0}
+      />
 
-      {/* Speed Controls */}
-      <Box
-        w="100%"
-        maxW="600px"
-        mx="auto"
-        bg="linear-gradient(135deg, rgba(26, 32, 44, 0.95), rgba(45, 55, 72, 0.95))"
-        backdropFilter="blur(10px)"
-        borderRadius="xl"
-        p={4}
-        border="1px solid"
-        borderColor="whiteAlpha.200"
-        boxShadow="xl"
-      >
-        <VStack spacing={4}>
-          <Text
-            fontSize="lg"
-            fontWeight="bold"
-            textAlign="center"
-            bgGradient="linear(45deg, blue.400, purple.400)"
-            bgClip="text"
-          >
-            Simulation Speed: {simulationSpeed.toFixed(1)} Earth Days/Second
-          </Text>
-          
-          <HStack spacing={4} justify="center" flexWrap="wrap">
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(0.1)}
-              colorScheme="blue"
-              variant={simulationSpeed === 0.1 ? "solid" : "outline"}
-            >
-              0.1x
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(0.5)}
-              colorScheme="blue"
-              variant={simulationSpeed === 0.5 ? "solid" : "outline"}
-            >
-              0.5x
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(1)}
-              colorScheme="blue"
-              variant={simulationSpeed === 1 ? "solid" : "outline"}
-            >
-              1x
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(5)}
-              colorScheme="blue"
-              variant={simulationSpeed === 5 ? "solid" : "outline"}
-            >
-              5x
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(10)}
-              colorScheme="blue"
-              variant={simulationSpeed === 10 ? "solid" : "outline"}
-            >
-              10x
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSimulationSpeed(50)}
-              colorScheme="red"
-              variant={simulationSpeed === 50 ? "solid" : "outline"}
-            >
-              50x
-            </Button>
-          </HStack>
-          
-          <Text fontSize="sm" color="text.secondary" textAlign="center">
-            Use preset speeds or adjust the slider below
-          </Text>
-          
-          <HStack w="100%" spacing={4} align="center">
-            <Text fontSize="sm" color="text.secondary" minW="60px">
-              0.1x
-            </Text>
-            <Box flex={1}>
-              <input
-                type="range"
-                min="0.1"
-                max="100"
-                step="0.1"
-                value={simulationSpeed}
-                onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
-                style={{
-                  width: '100%',
-                  height: '6px',
-                  borderRadius: '3px',
-                  background: 'linear-gradient(90deg, #3182ce 0%, #805ad5 100%)',
-                  outline: 'none',
-                  opacity: 0.8,
-                  cursor: 'pointer'
-                }}
-              />
-            </Box>
-            <Text fontSize="sm" color="text.secondary" minW="60px">
-              100x
-            </Text>
-          </HStack>
-        </VStack>
-      </Box>
-
-
-
-      {/* Planet Selector Section */}
-      <Box
-        w="100%"
-        maxW="900px"
-        mx="auto"
-        bg="linear-gradient(135deg, rgba(26, 32, 44, 0.95), rgba(45, 55, 72, 0.95))"
-        backdropFilter="blur(10px)"
-        borderRadius="xl"
-        p={{ base: 3, md: 6 }}
-        border="1px solid"
-        borderColor="whiteAlpha.200"
-        boxShadow="xl"
+      {/* ── Top HUD bar ──────────────────────────────────── */}
+      <Flex
+        position="absolute"
+        top={0} left={0} right={0}
+        align="center"
+        justify="space-between"
+        px={4}
+        h="44px"
+        bg="rgba(6, 9, 26, 0.72)"
+        backdropFilter="blur(14px)"
+        borderBottom="1px solid rgba(255,255,255,0.06)"
+        zIndex={10}
       >
         <Text
-          fontSize={{ base: "lg", md: "2xl" }}
-          fontWeight="bold"
-          textAlign="center"
-          mb={6}
-          bgGradient="linear(45deg, blue.400, purple.400)"
-          bgClip="text"
+          fontSize="xs"
+          fontWeight="700"
+          letterSpacing="widest"
+          textTransform="uppercase"
+          color="brand.400"
         >
-          Select Planet to Focus
+          ⊙ Solar System
         </Text>
-        
-        <Flex
-          justify="center"
-          gap={4}
-          flexWrap="wrap"
-          maxW="800px"
-          mx="auto"
-          mb={6}
-        >
-          {Object.entries(planetData).map(([name, data]) => (
-            <Box
-              key={name}
-              onClick={() => setFocusedPlanet(name)}
-              bg={focusedPlanet === name 
-                ? "whiteAlpha.200" 
-                : "whiteAlpha.50"}
-              border="2px solid"
-              borderColor={focusedPlanet === name 
-                ? "blue.400" 
-                : "whiteAlpha.100"}
-              borderRadius="xl"
-              p={4}
-              cursor="pointer"
-              transition="all 0.3s ease"
-              transform={focusedPlanet === name ? "scale(1.05)" : "scale(1)"}
-              backdropFilter="blur(5px)"
-              minW="100px"
-              textAlign="center"
-              _hover={{
-                bg: focusedPlanet !== name ? "whiteAlpha.100" : undefined,
-                transform: focusedPlanet !== name ? "scale(1.02)" : "scale(1.05)",
-              }}
-            >
-              {/* Planet visual */}
-              <Box
-                w="40px"
-                h="40px"
-                borderRadius="50%"
-                backgroundImage={`url(${data.texture})`}
-                backgroundSize="cover"
-                backgroundPosition = "center"
-                boxShadow="0 4px 10px rgba(0, 0, 0, 0.4)"
-                border="2px solid"
-                borderColor="whiteAlpha.300"
-                filter = "brightness(1.1) contrast(1.2)"
-                mx = "auto"
-                mb={3}
-              />
-              
-              {/* Planet name */}
-              <Text
-                color="white"
-                fontSize="sm"
-                fontWeight="600"
-                mb={2}
-              >
-                {name}
-              </Text>
-              
-              {/* Planet symbol */}
-              <Text fontSize="lg" mb={2} color="whiteAlpha.800">
-                {data.symbol}
-              </Text>
-              
-              {/* Focus indicator */}
-              {focusedPlanet === name && (
-                <Text
-                  fontSize="xs"
-                  color="blue.400"
-                  fontWeight="bold"
-                >
-                   FOCUSED
-                </Text>
-              )}
-            </Box>
-          ))}
-        </Flex>
-        
-        {/* Reset button */}
-        <Flex justify="center">
+        <HStack spacing={1}>
           <Button
-            onClick={() => setFocusedPlanet(null)}
-            bgGradient="linear(45deg, red.400, orange.400)"
-            color="white"
-            fontWeight="bold"
-            borderRadius="full"
-            px={6}
-            _hover={{
-              transform: "scale(1.05)",
-              boxShadow: "0 5px 15px rgba(255,107,107,0.4)",
-            }}
-            transition="all 0.3s ease"
+            size="xs"
+            variant="ghost"
+            color={showOrbitLines ? "white" : "whiteAlpha.400"}
+            onClick={toggleOrbitLines}
+            fontSize="10px"
+            fontWeight="600"
+            letterSpacing="wider"
+            _hover={{ bg: "whiteAlpha.100", color: "white" }}
           >
-             View All Planets
+            ORBITS
           </Button>
+          <IconButton
+            aria-label="Toggle fullscreen"
+            icon={isFullscreen ? <CloseIcon boxSize="10px" /> : <ExternalLinkIcon boxSize="10px" />}
+            onClick={toggleFullscreen}
+            size="xs"
+            variant="ghost"
+            color="whiteAlpha.600"
+            _hover={{ color: "white", bg: "whiteAlpha.100" }}
+          />
+        </HStack>
+      </Flex>
+
+      {/* ── Planet info card (slide in when focused) ─────── */}
+      <AnimatePresence>
+        {focusedPlanet && planetData[focusedPlanet]?.facts && (
+          <motion.div
+            key={focusedPlanet}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{
+              position: "absolute",
+              top: "60px",
+              left: "16px",
+              zIndex: 10,
+              width: "220px",
+            }}
+          >
+            <Box
+              bg="rgba(6, 9, 26, 0.88)"
+              backdropFilter="blur(16px)"
+              border="1px solid rgba(255,255,255,0.08)"
+              borderRadius="lg"
+              p={4}
+              color="white"
+            >
+              <HStack mb={3} spacing={3}>
+                <Box
+                  w="36px" h="36px"
+                  borderRadius="full"
+                  backgroundImage={`url(${planetData[focusedPlanet].texture})`}
+                  backgroundSize="cover"
+                  backgroundPosition="center"
+                  border="1px solid rgba(255,255,255,0.18)"
+                  flexShrink={0}
+                />
+                <VStack align="start" spacing={0}>
+                  <Text fontWeight="700" fontSize="sm" lineHeight="1.3">{focusedPlanet}</Text>
+                  <Text fontSize="lg" lineHeight="1" color="whiteAlpha.500">
+                    {planetData[focusedPlanet].symbol}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <SimpleGrid columns={2} spacing={2} mb={3}>
+                {[
+                  ["Diameter",  planetData[focusedPlanet].facts.diameter],
+                  ["Distance",  planetData[focusedPlanet].facts.distanceFromSun],
+                  ["Orbit",     planetData[focusedPlanet].facts.orbitalPeriod],
+                  ["Moons",     planetData[focusedPlanet].facts.moons],
+                ].map(([label, value]) => (
+                  <Box key={label}>
+                    <Text
+                      fontSize="9px"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      color="whiteAlpha.400"
+                      mb="2px"
+                    >
+                      {label}
+                    </Text>
+                    <Text fontSize="xs" fontWeight="600" color="whiteAlpha.900">{value}</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
+
+              <Divider borderColor="whiteAlpha.100" mb={2} />
+              <Text fontSize="xs" color="whiteAlpha.550" lineHeight="1.5">
+                {planetData[focusedPlanet].facts.description}
+              </Text>
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Bottom HUD ───────────────────────────────────── */}
+      <Box
+        position="absolute"
+        bottom={0} left={0} right={0}
+        bg="rgba(6, 9, 26, 0.80)"
+        backdropFilter="blur(14px)"
+        borderTop="1px solid rgba(255,255,255,0.06)"
+        zIndex={10}
+      >
+        {/* Planet strip */}
+        <Flex
+          overflowX="auto"
+          gap={3}
+          px={4}
+          py={2}
+          justify="center"
+          sx={{ "&::-webkit-scrollbar": { display: "none" }, scrollbarWidth: "none" }}
+        >
+          {Object.entries(planetData).map(([name, data]) => {
+            const isActive = focusedPlanet === name;
+            return (
+              <Box
+                key={name}
+                onClick={() => setFocusedPlanet(name)}
+                cursor="pointer"
+                textAlign="center"
+                flexShrink={0}
+                opacity={focusedPlanet && !isActive ? 0.4 : 1}
+                transition="all 0.2s"
+                _hover={{ opacity: 1 }}
+              >
+                <Box
+                  w="30px" h="30px"
+                  borderRadius="full"
+                  backgroundImage={`url(${data.texture})`}
+                  backgroundSize="cover"
+                  backgroundPosition="center"
+                  border="2px solid"
+                  borderColor={isActive ? "brand.400" : "transparent"}
+                  boxShadow={isActive ? "0 0 10px rgba(59,130,246,0.55)" : "none"}
+                  mx="auto"
+                  mb="4px"
+                  transition="all 0.2s"
+                />
+                <Text
+                  fontSize="8px"
+                  letterSpacing="wider"
+                  textTransform="uppercase"
+                  color={isActive ? "white" : "whiteAlpha.500"}
+                  fontWeight={isActive ? "700" : "400"}
+                >
+                  {name}
+                </Text>
+              </Box>
+            );
+          })}
+
+          {/* All / reset */}
+          <Box
+            onClick={() => setFocusedPlanet(null)}
+            cursor="pointer"
+            textAlign="center"
+            flexShrink={0}
+            opacity={focusedPlanet ? 1 : 0.4}
+            transition="all 0.2s"
+            _hover={{ opacity: 1 }}
+          >
+            <Box
+              w="30px" h="30px"
+              borderRadius="full"
+              bg="whiteAlpha.100"
+              border="2px solid"
+              borderColor={!focusedPlanet ? "brand.400" : "transparent"}
+              boxShadow={!focusedPlanet ? "0 0 10px rgba(59,130,246,0.55)" : "none"}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              mx="auto"
+              mb="4px"
+              transition="all 0.2s"
+            >
+              <Text fontSize="13px" lineHeight="1">⊙</Text>
+            </Box>
+            <Text
+              fontSize="8px"
+              letterSpacing="wider"
+              textTransform="uppercase"
+              color={!focusedPlanet ? "white" : "whiteAlpha.500"}
+              fontWeight={!focusedPlanet ? "700" : "400"}
+            >
+              All
+            </Text>
+          </Box>
+        </Flex>
+
+        {/* Speed controls */}
+        <Flex
+          align="center"
+          justify="center"
+          gap={3}
+          px={4}
+          py={2}
+          borderTop="1px solid rgba(255,255,255,0.04)"
+          flexWrap="wrap"
+        >
+          <Text fontSize="9px" letterSpacing="widest" textTransform="uppercase" color="whiteAlpha.400" minW="40px" textAlign="right">
+            Speed
+          </Text>
+          <HStack spacing={1}>
+            {[0.1, 1, 5, 10, 50].map(s => (
+              <Button
+                key={s}
+                size="xs"
+                onClick={() => setSimulationSpeed(s)}
+                variant={simulationSpeed === s ? "solid" : "ghost"}
+                colorScheme={simulationSpeed === s ? "brand" : "gray"}
+                color={simulationSpeed === s ? "white" : "whiteAlpha.500"}
+                fontSize="10px"
+                minW="34px"
+                h="20px"
+                _hover={{ color: "white" }}
+              >
+                {s}x
+              </Button>
+            ))}
+          </HStack>
+          <Box flex={1} maxW="160px">
+            <input
+              type="range"
+              min="0.1"
+              max="100"
+              step="0.1"
+              value={simulationSpeed}
+              onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
+              style={{
+                width: '100%',
+                height: '3px',
+                borderRadius: '2px',
+                outline: 'none',
+                cursor: 'pointer',
+                accentColor: '#3b82f6',
+              }}
+            />
+          </Box>
+          <Text fontSize="xs" color="brand.400" fontWeight="700" minW="38px">
+            {simulationSpeed.toFixed(1)}x
+          </Text>
         </Flex>
       </Box>
-    </VStack>
+    </Box>
   );
 }

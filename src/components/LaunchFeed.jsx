@@ -33,6 +33,7 @@ import {
   StarIcon,
   InfoIcon
 } from "@chakra-ui/icons";
+import { FaYoutube } from 'react-icons/fa';
 
 /**
  * Countdown Timer Component
@@ -176,7 +177,7 @@ function LaunchCard({ launch }) {
       border="1px solid"
       borderColor="border.default"
       borderRadius="xl"
-      p={6}
+      overflow="hidden"
       shadow="md"
       _hover={{
         shadow: "lg",
@@ -185,8 +186,30 @@ function LaunchCard({ launch }) {
       }}
       transition="all 0.3s ease"
     >
+      {/* Mission image banner */}
+      {launch.image && (
+        <Box position="relative" h="160px" overflow="hidden">
+          <Image
+            src={launch.image}
+            alt={launch.name}
+            w="100%"
+            h="100%"
+            objectFit="cover"
+            fallback={<Box h="160px" bg="bg.elevated" />}
+          />
+          <Box
+            position="absolute"
+            bottom={0}
+            left={0}
+            right={0}
+            h="60px"
+            bg="linear-gradient(to bottom, transparent, #0B1120)"
+          />
+        </Box>
+      )}
+
       {/* Header */}
-      <VStack spacing={4} align="stretch">
+      <VStack spacing={4} align="stretch" p={6}>
         <HStack justify="space-between" align="start">
           <VStack align="start" spacing={2} flex={1}>
             <HStack spacing={3}>
@@ -288,7 +311,7 @@ function LaunchCard({ launch }) {
             )}
 
             {/* External Links */}
-            <HStack spacing={3}>
+            <HStack spacing={3} wrap="wrap">
               {launch.url && (
                 <Button
                   size="sm"
@@ -300,7 +323,7 @@ function LaunchCard({ launch }) {
                   Mission Details
                 </Button>
               )}
-              
+
               {launch.pad?.url && (
                 <Button
                   size="sm"
@@ -310,6 +333,18 @@ function LaunchCard({ launch }) {
                   variant="outline"
                 >
                   Launch Site
+                </Button>
+              )}
+
+              {launch.vid_urls?.length > 0 && (
+                <Button
+                  size="sm"
+                  leftIcon={<Icon as={FaYoutube} />}
+                  onClick={() => window.open(launch.vid_urls[0].url, '_blank')}
+                  colorScheme="red"
+                  variant="outline"
+                >
+                  Watch Live
                 </Button>
               )}
             </HStack>

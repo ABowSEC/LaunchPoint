@@ -149,4 +149,29 @@ export function createOrbitEllipse(a, b, inclination) {
   );
   const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.3 });
   return new THREE.Line(geometry, material);
-} 
+}
+
+/**
+ * Creates an atmosphere/glow sphere around a planet using BackSide additive blending.
+ * @param {number} planetRadius - The planet's geometry radius
+ * @param {number} color - Hex color for the atmosphere (e.g. 0x4488ff)
+ * @param {Object} options
+ * @param {number} options.scale - How much larger than the planet (default 1.18)
+ * @param {number} options.opacity - Glow opacity (default 0.35)
+ * @returns {THREE.Mesh}
+ */
+export function createAtmosphereGlow(planetRadius, color, options = {}) {
+  const { scale = 1.18, opacity = 0.35 } = options;
+  const geometry = new THREE.SphereGeometry(planetRadius * scale, 32, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = 2;
+  return mesh;
+}

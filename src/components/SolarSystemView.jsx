@@ -4,7 +4,7 @@ import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
 import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from "three";
 import Planet from "./Planet";
-import { createRingTexture, createOrbitEllipse } from '../utils/threeHelpers';
+import { createRingTexture, createOrbitEllipse, createAtmosphereGlow } from '../utils/threeHelpers';
 import { useAnimationFrame } from '../hooks/useAnimationFrame';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { useSyncedRef } from '../hooks/useSyncedRef';
@@ -99,7 +99,6 @@ class OrbitControls {
 }
 // FUTURE MIGRATION NOTE: For future enhancements Ive considered using react-three-fiber (https://docs.pmnd.rs/react-three-fiber Read More about later) to manage the 3D scene as a React component. 7/15/2025
 // This would allow for more declarative scene construction, easier integration of UI state (e.g., solo planet views, moons, overlays), and better React lifecycle management.
-// Current implementation uses imperative Three.js, but migration to react-three-fiber would make features like dynamic planet focus, adding moons, or interactive overlays more idiomatic and maintainable in React.
 
 export default function SolarSystemView() {
   const mountRef = useRef(null);
@@ -159,7 +158,7 @@ export default function SolarSystemView() {
   // Use the fullscreen hook
   const { isFullscreen, toggleFullscreen } = useFullscreen(mountRef);
 
-  // Orbit lines toggle - much more efficient
+  // Orbit lines toggle
   const toggleOrbitLines = () => {
     const newVisibility = !showOrbitLines;
     setShowOrbitLines(newVisibility);
@@ -207,6 +206,15 @@ export default function SolarSystemView() {
     planetObjectsRef.current = planetObjects;
     const orbitLines = []; // Array to store orbit line references
     orbitLinesRef.current = orbitLines; // Store reference for external access
+
+    const ATMOSPHERE_CONFIG = {
+      Earth:   { color: 0x4488ff, opacity: 0.38, scale: 1.20 },
+      Venus:   { color: 0xffcc66, opacity: 0.42, scale: 1.22 },
+      Jupiter: { color: 0xffaa44, opacity: 0.28, scale: 1.15 },
+      Neptune: { color: 0x3366ff, opacity: 0.32, scale: 1.18 },
+      Uranus:  { color: 0x88ddff, opacity: 0.28, scale: 1.16 },
+      Mars:    { color: 0xff4422, opacity: 0.25, scale: 1.16 },
+    };
 
     const createPlanetSystem = (planetName) => {
       const data = planetOrbitData[planetName];
@@ -291,6 +299,16 @@ export default function SolarSystemView() {
         // });
       }
       
+      // Add atmosphere glow for planets with atmospheres
+      const atmosConfig = ATMOSPHERE_CONFIG[planetName];
+      if (atmosConfig) {
+        const glowMesh = createAtmosphereGlow(data.radius, atmosConfig.color, {
+          scale: atmosConfig.scale,
+          opacity: atmosConfig.opacity,
+        });
+        group.add(glowMesh);
+      }
+
       // Create inclined orbit ellipse and store reference
       const orbitLine = createOrbitEllipse(data.a, data.b, data.inclination);
       orbitLines.push(orbitLine);
@@ -428,7 +446,7 @@ export default function SolarSystemView() {
           textTransform="uppercase"
           color="brand.400"
         >
-          ⊙ Solar System
+          Solar System
         </Text>
         <HStack spacing={1}>
           <Button

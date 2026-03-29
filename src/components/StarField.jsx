@@ -12,6 +12,67 @@ function rand(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+// ── Shooting stars ────────────────────────────────────────────────────────────
+const SHOOTING_POOL_SIZE = 6;
+const SHOOTING_MEAN_INTERVAL = 240; // frames @ ~60fps ≈ 4s
+const SHOOTING_SPREAD = 60;
+
+function buildShootingStarPool() {
+  return Array.from({ length: SHOOTING_POOL_SIZE }, () => ({
+    active: false, x: 0, y: 0, vx: 0, vy: 0,
+    trailLength: 0, life: 0, maxLife: 0,
+  }));
+}
+
+function spawnShootingStar(star, w, h) {
+  const edge = Math.random();
+  if (edge < 0.7) {
+    star.x = rand(w * 0.1, w * 0.9);
+    star.y = rand(-20, h * 0.3);
+  } else {
+    star.x = rand(w * 0.5, w);
+    star.y = rand(-20, h * 0.4);
+  }
+  const angleDeg = rand(20, 50);
+  const speed = rand(6, 14);
+  const rad = (angleDeg * Math.PI) / 180;
+  star.vx = Math.cos(rad) * speed;
+  star.vy = Math.sin(rad) * speed;
+  star.trailLength = rand(80, 180);
+  star.maxLife = Math.ceil(star.trailLength / speed) + 20;
+  star.life = 0;
+  star.active = true;
+}
+
+function drawShootingStar(ctx, star) {
+  const progress = star.life / star.maxLife;
+  let alpha;
+  if (progress < 0.10) alpha = progress / 0.10;
+  else if (progress > 0.75) alpha = 1 - (progress - 0.75) / 0.25;
+  else alpha = 1.0;
+  alpha = Math.max(0, Math.min(1, alpha)) * 0.9;
+
+  const tailLen = Math.min(star.life * Math.hypot(star.vx, star.vy), star.trailLength);
+  const angle = Math.atan2(star.vy, star.vx);
+  const tailX = star.x - Math.cos(angle) * tailLen;
+  const tailY = star.y - Math.sin(angle) * tailLen;
+
+  const grad = ctx.createLinearGradient(tailX, tailY, star.x, star.y);
+  grad.addColorStop(0, `rgba(255,255,255,0)`);
+  grad.addColorStop(0.6, `rgba(200,220,255,${alpha * 0.5})`);
+  grad.addColorStop(1, `rgba(255,255,255,${alpha})`);
+
+  const perp = angle + Math.PI / 2;
+  const hw = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(star.x + Math.cos(perp) * hw, star.y + Math.sin(perp) * hw);
+  ctx.lineTo(star.x - Math.cos(perp) * hw, star.y - Math.sin(perp) * hw);
+  ctx.lineTo(tailX, tailY);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+}
+
 function buildStars(w, h) {
   const stars = [];
   for (const layer of LAYERS) {
@@ -39,6 +100,8 @@ export default function StarField() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let stars = [];
+    const shootingStars = buildShootingStarPool();
+    let nextSpawn = SHOOTING_MEAN_INTERVAL + rand(-SHOOTING_SPREAD, SHOOTING_SPREAD);
     let frame = 0;
     let animId;
 
@@ -54,6 +117,23 @@ export default function StarField() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frame++;
+
+      // Shooting stars
+      nextSpawn--;
+      if (nextSpawn <= 0) {
+        const slot = shootingStars.find(s => !s.active);
+        if (slot) spawnShootingStar(slot, canvas.width, canvas.height);
+        nextSpawn = SHOOTING_MEAN_INTERVAL + rand(-SHOOTING_SPREAD, SHOOTING_SPREAD);
+      }
+      for (const s of shootingStars) {
+        if (!s.active) continue;
+        drawShootingStar(ctx, s);
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life++;
+        if (s.life >= s.maxLife || s.x > canvas.width + 50 || s.y > canvas.height + 50)
+          s.active = false;
+      }
 
       for (const star of stars) {
         const twinkle = Math.sin(frame * star.twinkleSpeed + star.twinklePhase) * 0.18;

@@ -83,7 +83,7 @@ class Planet {
    * @returns {THREE.Mesh} The planet mesh ready for scene rendering
    */
   getMesh() {
-    const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
+    const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
     const material = new THREE.MeshStandardMaterial({ 
       map: this.getTexture(),
       roughness: 0.8,

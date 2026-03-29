@@ -38,30 +38,70 @@ export function createBasicScene(width, height, options = {}) {
 }
 
 /**
- * Creates a starfield background for space scenes.
+ * Creates a starfield background for space scenes with color and size variation.
  * @param {number} starCount - Number of stars to generate
  * @param {number} spread - How far stars spread from center
- * @returns {THREE.Points} Starfield points object
+ * @returns {THREE.Group} Starfield group with multiple point layers
  */
-export function createStarfield(starCount = 5000, spread = 2000) {
-  const starsGeometry = new THREE.BufferGeometry();
-  const starsMaterial = new THREE.PointsMaterial({ 
-    color: 0xFFFFFF, 
-    size: 1,
-    transparent: true,
-    opacity: 0.8
-  });
-  
-  const starsVertices = [];
-  for (let i = 0; i < starCount; i++) {
-    const x = (Math.random() - 0.5) * spread;
-    const y = (Math.random() - 0.5) * spread;
-    const z = (Math.random() - 0.5) * spread;
-    starsVertices.push(x, y, z);
+export function createStarfield(starCount = 8000, spread = 2000) {
+  const group = new THREE.Group();
+
+  // Stellar color palette weighted by star type frequency
+  function starColor() {
+    const roll = Math.random();
+    if (roll < 0.55) {
+      // White / yellow-white (G/K type)
+      return new THREE.Color(1.0, 0.96 + Math.random() * 0.04, 0.82 + Math.random() * 0.12);
+    } else if (roll < 0.80) {
+      // Blue-white (B/A type)
+      return new THREE.Color(0.70 + Math.random() * 0.15, 0.82 + Math.random() * 0.12, 1.0);
+    } else if (roll < 0.92) {
+      // Warm orange (K type)
+      return new THREE.Color(1.0, 0.78 + Math.random() * 0.10, 0.50 + Math.random() * 0.15);
+    } else {
+      // Red-orange (M type)
+      return new THREE.Color(1.0, 0.55 + Math.random() * 0.15, 0.35 + Math.random() * 0.15);
+    }
   }
-  
-  starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-  return new THREE.Points(starsGeometry, starsMaterial);
+
+  // Three size layers: dim (majority), mid, bright (rare)
+  const layers = [
+    { fraction: 0.70, size: 0.8 },
+    { fraction: 0.25, size: 1.6 },
+    { fraction: 0.05, size: 3.0 },
+  ];
+
+  for (const layer of layers) {
+    const count = Math.round(starCount * layer.fraction);
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3 + 0] = (Math.random() - 0.5) * spread;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+      const c = starColor();
+      colors[i * 3 + 0] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: layer.size,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      sizeAttenuation: false,
+    });
+
+    group.add(new THREE.Points(geometry, material));
+  }
+
+  return group;
 }
 
 /**
@@ -129,7 +169,38 @@ export function createSun(radius = 4, texturePath = "/textures/sun.jpg", options
   sunMesh.castShadow = false;
   sunMesh.receiveShadow = false;
 
-  return sunMesh;
+  const group = new THREE.Group();
+  group.add(sunMesh);
+
+  // Inner corona — tight warm glow
+  const innerCoronaGeo = new THREE.SphereGeometry(radius * 1.12, 32, 32);
+  const innerCoronaMat = new THREE.MeshBasicMaterial({
+    color: 0xff8800,
+    transparent: true,
+    opacity: 0.40,
+    side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const innerCorona = new THREE.Mesh(innerCoronaGeo, innerCoronaMat);
+  innerCorona.renderOrder = 1;
+  group.add(innerCorona);
+
+  // Outer corona — wide pale halo
+  const outerCoronaGeo = new THREE.SphereGeometry(radius * 1.45, 32, 32);
+  const outerCoronaMat = new THREE.MeshBasicMaterial({
+    color: 0xffdd88,
+    transparent: true,
+    opacity: 0.18,
+    side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const outerCorona = new THREE.Mesh(outerCoronaGeo, outerCoronaMat);
+  outerCorona.renderOrder = 2;
+  group.add(outerCorona);
+
+  return group;
 }
 
 /**
@@ -141,7 +212,7 @@ export function createSun(radius = 4, texturePath = "/textures/sun.jpg", options
  */
 export function createSolarSystemScene(width, height, options = {}) {
   const {
-    starCount = 5000,
+    starCount = 8000,
     starSpread = 2000,
     sunRadius = 4,
     sunTexture = "/textures/sun.jpg",

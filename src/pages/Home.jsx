@@ -6,11 +6,10 @@ import {
   HStack,
   Text,
   Heading,
+  SimpleGrid,
   Spinner,
   Image,
   IconButton,
-  useColorMode,
-  SimpleGrid,
   Divider,
   Link,
   Badge,
@@ -25,8 +24,6 @@ import {
   useDisclosure
 } from "@chakra-ui/react";
 import {
-  MoonIcon,
-  SunIcon,
   ExternalLinkIcon,
   CalendarIcon,
   ArrowForwardIcon,
@@ -40,14 +37,7 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const [stats] = useState({
-    totalImages: 0,
-    dailyVisitors: 0,
-    spaceEvents: 0,
-  });
 
   useEffect(() => {
     const fetchAPOD = async () => {
@@ -105,9 +95,9 @@ export default function Home() {
   
     if (error) {
       return (
-        <Box maxW="lg" mx="auto" p={6} borderRadius="lg" bg="red.50" border="1px" borderColor="red.200">
-          <Heading size="md" color="red.600" mb={2}>Error</Heading>
-          <Text color="red.500">{error}</Text>
+        <Box maxW="lg" mx="auto" p={6} borderRadius="lg" bg="bg.card" border="1px solid" borderColor="red.800">
+          <Heading size="md" color="red.400" mb={2}>Error</Heading>
+          <Text color="text.secondary">{error}</Text>
           <Button mt={4} onClick={() => window.location.reload()} colorScheme="red" leftIcon={<ArrowForwardIcon />}>
             Try Again
           </Button>
@@ -241,15 +231,9 @@ export default function Home() {
             </Button>
           )}
   
-          {apod.copyright && apod.copyright.trim() !== "" ? (
-            <Text fontSize="sm" color="text.secondary" fontStyle="italic">
-              Photography by {apod.copyright}
-            </Text>
-          ) : (
-            <Text fontSize="sm" color="text.secondary" fontStyle="italic">
-              Courtesy of NASA
-            </Text>
-          )}
+          <Text fontSize="sm" color="text.secondary" fontStyle="italic">
+            {apod.copyright?.trim() ? `Photography by ${apod.copyright}` : 'Courtesy of NASA'}
+          </Text>
         </VStack>
       </VStack>
     );
@@ -257,52 +241,37 @@ export default function Home() {
   
 
   return (
-    <Box bg="bg.body" minH="100vh" py={16} px={6}>
+    <Box py={16} px={6}>
       <Container maxW="7xl">
-        <HStack justify="space-between" mb={6}>
-          <Box />  
-        </HStack>
-
         <VStack spacing={10} textAlign="center">
-          <Heading size="2xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
+          <Heading size="2xl" bgGradient="linear(to-r, blue.300, brand.400)" bgClip="text">
             Welcome to LaunchPoint
           </Heading>
-          <Text fontSize="xl" color="text.primary" maxW="600px">
-            Explore the universe *** powered by NASA data
+          <Text fontSize="xl" color="text.secondary" maxW="560px">
+            Explore the universe — powered by NASA data
           </Text>
           <HStack spacing={4}>
-            <Button 
-              as={RouterLink} 
-              to="/explore" 
+            <Button
+              as={RouterLink}
+              to="/explore"
               size="lg"
-              bgGradient="linear(to-r, teal.400, blue.500)"
-              _hover={{
-                bgGradient: "linear(to-r, teal.500, blue.600)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 25px rgba(0,0,0,0.3)"
-              }}
-              _active={{
-                transform: "translateY(0px)"
-              }}
-              transition="all 0.3s"
+              colorScheme="brand"
+              _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }}
+              _active={{ transform: 'translateY(0)' }}
+              transition="all 0.2s"
             >
               Start Exploring
             </Button>
-            <Button 
-              variant="outline" 
-              colorScheme="teal" 
-              size="lg" 
-              as={RouterLink} 
+            <Button
+              as={RouterLink}
               to="/launches"
-              _hover={{
-                bgGradient: "linear(to-r, teal.400, blue.500)",
-                color: "white",
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 25px rgba(0,0,0,0.3)"
-              }}
-              transition="all 0.3s"
+              size="lg"
+              variant="outline"
+              colorScheme="brand"
+              _hover={{ transform: 'translateY(-2px)', bg: 'whiteAlpha.50' }}
+              transition="all 0.2s"
             >
-              Learn More
+              View Launches
             </Button>
           </HStack>
         </VStack>
@@ -310,68 +279,6 @@ export default function Home() {
         <Divider my={12} />
 
         <Box>{renderAPODContent()}</Box>
-
-        <Divider my={12} />
-
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-          <Box 
-            bg="bg.card" 
-            p={6} 
-            rounded="xl" 
-            shadow="md" 
-            textAlign="center"
-            _hover={{
-              transform: "translateY(-4px)",
-              shadow: "xl",
-              borderColor: "teal.400"
-            }}
-            border="1px solid"
-            borderColor="transparent"
-            transition="all 0.3s"
-          >
-            <Text fontSize="lg" mb={2} color="text.primary">Total Images</Text>
-            <Heading size="xl" bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">{stats.totalImages.toLocaleString()}</Heading>
-            <Text fontSize="sm" color="text.secondary">From NASA's archives</Text>
-          </Box>
-          <Box 
-            bg="bg.card" 
-            p={6} 
-            rounded="xl" 
-            shadow="md" 
-            textAlign="center"
-            _hover={{
-              transform: "translateY(-4px)",
-              shadow: "xl",
-              borderColor: "purple.400"
-            }}
-            border="1px solid"
-            borderColor="transparent"
-            transition="all 0.3s"
-          >
-            <Text fontSize="lg" mb={2} color="text.primary">Daily Visitors</Text>
-            <Heading size="xl" bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">{stats.dailyVisitors.toLocaleString()}</Heading>
-            <Text fontSize="sm" color="text.secondary">Space enthusiasts worldwide</Text>
-          </Box>
-          <Box 
-            bg="bg.card" 
-            p={6} 
-            rounded="xl" 
-            shadow="md" 
-            textAlign="center"
-            _hover={{
-              transform: "translateY(-4px)",
-              shadow: "xl",
-              borderColor: "orange.400"
-            }}
-            border="1px solid"
-            borderColor="transparent"
-            transition="all 0.3s"
-          >
-            <Text fontSize="lg" mb={2} color="text.primary">Space Events</Text>
-            <Heading size="xl" bgGradient="linear(to-r, orange.400, red.500)" bgClip="text">{stats.spaceEvents}</Heading>
-            <Text fontSize="sm" color="text.secondary">This month</Text>
-          </Box>
-        </SimpleGrid>
       </Container>
 
       {/* Fullscreen Image Modal */}

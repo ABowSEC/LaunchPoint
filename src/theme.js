@@ -1,73 +1,73 @@
-
 import { extendTheme } from '@chakra-ui/react';
 
-// Custom brand colors 
 const colors = {
   brand: {
-    50: '#e3f2fd',
-    100: '#bbdefb',
-    200: '#90caf9',
-    300: '#64b5f6',
-    400: '#42a5f5',
-    500: '#2196f3', // Primary brand color
-    600: '#1e88e5',
-    700: '#1976d2',
-    800: '#1565c0',
-    900: '#0d47a1',
+    50:  '#e8f1ff',
+    100: '#c0d6ff',
+    200: '#91b8ff',
+    300: '#5e97ff',
+    400: '#3b82f6',
+    500: '#2563eb',
+    600: '#1d4ed8',
+    700: '#1e40af',
+    800: '#1e3a8a',
+    900: '#1e3363',
   },
-  accent: {
-    500: '#ff9800', // Accent color
+  space: {
+    900: '#03050D',
+    800: '#06091A',
+    700: '#0B1120',
+    600: '#101828',
+    500: '#182135',
+    400: '#243552',
   },
 };
 
-// Semantic tokens 
 const semanticTokens = {
   colors: {
-    'bg.body': {
-      default: 'gray.50',
-      _dark: 'gray.900',
-    },
-    'bg.card': {
-      default: 'white',
-      _dark: 'gray.700',
-    },
-    'text.primary': {
-      default: 'gray.800',
-      _dark: 'whiteAlpha.900',
-    },
-    'text.secondary': {
-      default: 'gray.600',
-      _dark: 'gray.400',
-    },
-    'border.default': {
-      default: 'gray.200',
-      _dark: 'gray.600',
-    },
-    'brand.primary': {
-      default: 'brand.500',
-    },
-    'brand.accent': {
-      default: 'accent.500',
-    },
+    'bg.body':     { default: '#06091A', _dark: '#06091A' },
+    'bg.card':     { default: '#0B1120', _dark: '#0B1120' },
+    'bg.elevated': { default: '#101828', _dark: '#101828' },
+    'text.primary':   { default: '#E2E8F0', _dark: '#E2E8F0' },
+    'text.secondary': { default: '#7A93B8', _dark: '#7A93B8' },
+    'border.default': { default: '#1E2D45', _dark: '#1E2D45' },
+    'brand.primary':  { default: 'brand.400' },
   },
 };
 
 const config = {
-  initialColorMode: 'light',
-  useSystemColorMode: true,
+  initialColorMode: 'dark',
+  useSystemColorMode: false,
 };
 
 const theme = extendTheme({
   config,
   colors,
   semanticTokens,
+  fonts: {
+    heading: `'Inter', -apple-system, sans-serif`,
+    body:    `'Inter', -apple-system, sans-serif`,
+  },
   styles: {
-    global: (props) => ({
+    global: {
       body: {
         bg: 'bg.body',
         color: 'text.primary',
+        lineHeight: 'tall',
       },
-    }),
+      '::selection': {
+        bg: 'brand.700',
+        color: 'white',
+      },
+    },
+  },
+  components: {
+    Button: {
+      defaultProps: { colorScheme: 'brand' },
+    },
+    Divider: {
+      baseStyle: { borderColor: 'border.default', opacity: 1 },
+    },
   },
 });
 

@@ -24,6 +24,7 @@ import SolarSimPage from './pages/SolarSimPage';
 import ISSLivePage from './pages/issLive';
 import ChatBotDrawer from './components/ChatBotDrawer';
 import StarField from './components/StarField';
+import NavLaunchCountdown from './components/NavLaunchCountdown';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -102,6 +103,7 @@ function Navigation() {
           })}
 
           <Spacer />
+          <NavLaunchCountdown />
           <ChatBotDrawer />
         </Flex>
       </Container>

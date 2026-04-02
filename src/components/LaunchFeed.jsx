@@ -13,11 +13,9 @@ import {
   SimpleGrid,
   Image,
   Icon,
-  Tooltip,
   Button,
   Collapse,
   Divider,
-  Link,
   Flex,
   Stat,
   StatLabel,
@@ -29,7 +27,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   InfoIcon,
-  TimeIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube } from 'react-icons/fa';
 

@@ -22,7 +22,7 @@ import MarsPage from './pages/MarsPage';
 import ExplorePage from './pages/ExplorePage';
 import SolarSimPage from './pages/SolarSimPage';
 import ISSLivePage from './pages/issLive';
-import ChatBotDrawer from './components/ChatBotDrawer';
+import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
 import NavLaunchCountdown from './components/NavLaunchCountdown';
 
@@ -104,7 +104,7 @@ function Navigation() {
 
           <Spacer />
           <NavLaunchCountdown />
-          <ChatBotDrawer />
+          <MissionTerminal />
         </Flex>
       </Container>
     </Box>

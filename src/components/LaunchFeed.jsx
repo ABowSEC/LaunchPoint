@@ -21,12 +21,12 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  Link,
 } from "@chakra-ui/react";
 import {
   ExternalLinkIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  InfoIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube } from 'react-icons/fa';
 
@@ -67,15 +67,14 @@ function CountdownTimer({ launchTime }) {
     return () => clearInterval(timer);
   }, [launchTime]);
 
-{/*Graphics could be added*/}
   if (isLaunched) {
     return (
       <Badge colorScheme="green" px={3} py={1} borderRadius="full">
-         Launched!
+        Launched!
       </Badge>
     );
   }
-  {/*ADD FINAL COUNTDOWN EFFECTS FOR end of timer display*/}
+
   return (
     <HStack spacing={2} wrap="wrap">
       {timeLeft.days > 0 && (
@@ -260,9 +259,12 @@ function LaunchCard({ launch }) {
           </Box>
           <Box>
             <Text fontSize="sm" color="text.secondary">Launch Site</Text>
-            <Text fontWeight="medium">
-              {launch.pad?.name || 'TBD'}
-            </Text>
+            <Text fontWeight="medium">{launch.pad?.name || 'TBD'}</Text>
+            {launch.pad?.location?.name && (
+              <Text fontSize="xs" color="text.secondary" mt={0.5}>
+                {launch.pad.location.name}
+              </Text>
+            )}
           </Box>
         </SimpleGrid>
 
@@ -303,37 +305,28 @@ function LaunchCard({ launch }) {
               </Box>
             )}
 
-            {/* External Links */}
             <HStack spacing={3} wrap="wrap">
-              {launch.url && (
+              {launch.pad?.map_url && (
                 <Button
+                  as={Link}
+                  href={launch.pad.map_url}
+                  isExternal
                   size="sm"
                   leftIcon={<ExternalLinkIcon />}
-                  onClick={() => window.open(launch.url, '_blank')}
-                  colorScheme="blue"
-                  variant="outline"
-                >
-                  Mission Details
-                </Button>
-              )}
-
-              {launch.pad?.url && (
-                <Button
-                  size="sm"
-                  leftIcon={<InfoIcon />}
-                  onClick={() => window.open(launch.pad.url, '_blank')}
                   colorScheme="teal"
                   variant="outline"
                 >
-                  Launch Site
+                  View on Map
                 </Button>
               )}
 
               {launch.vid_urls?.length > 0 && (
                 <Button
+                  as={Link}
+                  href={launch.vid_urls[0].url}
+                  isExternal
                   size="sm"
                   leftIcon={<Icon as={FaYoutube} />}
-                  onClick={() => window.open(launch.vid_urls[0].url, '_blank')}
                   colorScheme="red"
                   variant="outline"
                 >
@@ -356,20 +349,15 @@ function LaunchFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  //GET LAUNCH DATA
   useEffect(() => {
     const fetchLaunches = async () => {
       try {
         setLoading(true);
         setError(null);
-        
         const response = await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        setLaunches(data.results.slice(0, 10)); // Show more launches
+        setLaunches(data.results.slice(0, 10));
       } catch (err) {
         console.error('Error fetching launches:', err);
         setError(err.message);
@@ -379,10 +367,7 @@ function LaunchFeed() {
     };
 
     fetchLaunches();
-    
-    // Refresh every 5 minutes
     const interval = setInterval(fetchLaunches, 5 * 60 * 1000);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -394,7 +379,7 @@ function LaunchFeed() {
       </VStack>
     );
   }
-  {/*Error Catching/*/}
+
   if (error) {
     return (
       <Alert status="error" borderRadius="lg">

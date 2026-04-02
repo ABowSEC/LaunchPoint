@@ -207,17 +207,13 @@ function LaunchCard({ launch }) {
             <HStack spacing={3}>
 
               
-              <Image   
-                src={getAgencyLogo(launch.launch_service_provider?.name)} 
-                alt={'${launch.launch_service_provider?.name} logo'} 
-                boxSize="60px" objectFit="contain" 
-                fallbackSrc= "/logos/defaultAgency.jpg"
-        
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/logos/defaultAgency.jpg"
-
-                }}/> 
+              <Image
+                src={getAgencyLogo(launch.launch_service_provider?.name)}
+                alt={`${launch.launch_service_provider?.name ?? 'Agency'} logo`}
+                boxSize="60px"
+                objectFit="contain"
+                fallbackSrc="/logos/defaultAgency.jpg"
+              />
     
               <VStack align="start" spacing={1}>
                 <Text fontSize="lg" fontWeight="bold" color="text.primary">

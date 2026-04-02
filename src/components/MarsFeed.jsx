@@ -103,7 +103,7 @@ export default function MarsFeed({ rover, page, onPageChange }) {
               cursor="pointer"
               borderRadius="md"
               overflow="hidden"
-              bg="gray.800"
+              bg="bg.elevated"
               _hover={{ opacity: 0.85, transform: "scale(1.02)" }}
               transition="all 0.15s"
               onClick={() => handleOpen(photo)}

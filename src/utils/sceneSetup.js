@@ -27,8 +27,10 @@ export function createBasicScene(width, height, options = {}) {
   // Create renderer
   const renderer = new THREE.WebGLRenderer({ antialias });
   renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(clearColor);
-  
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
   if (shadowMap) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;

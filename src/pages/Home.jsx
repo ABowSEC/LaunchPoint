@@ -230,9 +230,6 @@ export default function Home() {
             </Button>
           )}
   
-          <Text fontSize="sm" color="text.secondary" fontStyle="italic">
-            {apod.copyright?.trim() ? `Photography by ${apod.copyright}` : 'Courtesy of NASA'}
-          </Text>
         </VStack>
       </VStack>
     );

@@ -10,95 +10,7 @@ import { useFullscreen } from '../hooks/useFullscreen';
 import { useSyncedRef } from '../hooks/useSyncedRef';
 import { planetOrbitData, planetData } from '../utils/planetData';
 import { createSolarSystemScene, setupResizeHandler } from '../utils/sceneSetup';
-
-class OrbitControls {
-  constructor(camera, domElement) {
-    this.camera = camera;
-    this.domElement = domElement;
-    this.target = new THREE.Vector3();
-    this.enableDamping = true;
-    this.enablePan = false;
-    this.dampingFactor = 0.05;
-    
-    this.spherical = new THREE.Spherical();
-    this.sphericalDelta = new THREE.Spherical();
-    this.scale = 1;
-    
-    this.rotateStart = new THREE.Vector2();
-    this.rotateEnd = new THREE.Vector2();
-    this.rotateDelta = new THREE.Vector2();
-    
-    this.isMouseDown = false;
-    
-    this.onMouseDown = this.onMouseDown.bind(this);
-    this.onMouseMove = this.onMouseMove.bind(this);
-    this.onMouseUp = this.onMouseUp.bind(this);
-    this.onWheel = this.onWheel.bind(this);
-    
-    this.domElement.addEventListener('mousedown', this.onMouseDown);
-    this.domElement.addEventListener('wheel', this.onWheel);
-  }
-  
-  onMouseDown(event) {
-    this.isMouseDown = true;
-    this.rotateStart.set(event.clientX, event.clientY);
-    document.addEventListener('mousemove', this.onMouseMove);
-    document.addEventListener('mouseup', this.onMouseUp);
-  }
-  
-  onMouseMove(event) {
-    if (!this.isMouseDown) return;
-    
-    this.rotateEnd.set(event.clientX, event.clientY);
-    this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart);
-    
-    this.sphericalDelta.theta -= 2 * Math.PI * this.rotateDelta.x / this.domElement.clientHeight;
-    this.sphericalDelta.phi -= 2 * Math.PI * this.rotateDelta.y / this.domElement.clientHeight;
-    
-    this.rotateStart.copy(this.rotateEnd);
-  }
-  
-  onMouseUp() {
-    this.isMouseDown = false;
-    document.removeEventListener('mousemove', this.onMouseMove);
-    document.removeEventListener('mouseup', this.onMouseUp);
-  }
-  
-  onWheel(event) {
-    if (event.deltaY < 0) {
-      this.scale *= 0.95;
-    } else {
-      this.scale *= 1.05;
-    }
-  }
-  
-  update() {
-    const offset = new THREE.Vector3();
-    offset.copy(this.camera.position).sub(this.target);
-    
-    this.spherical.setFromVector3(offset);
-    this.spherical.theta += this.sphericalDelta.theta;
-    this.spherical.phi += this.sphericalDelta.phi;
-    this.spherical.radius *= this.scale;
-    
-    this.spherical.makeSafe();
-    
-    offset.setFromSpherical(this.spherical);
-    this.camera.position.copy(this.target).add(offset);
-    this.camera.lookAt(this.target);
-    
-    if (this.enableDamping) {
-      this.sphericalDelta.theta *= (1 - this.dampingFactor);
-      this.sphericalDelta.phi *= (1 - this.dampingFactor);
-      this.scale = 1 + (this.scale - 1) * (1 - this.dampingFactor);
-    } else {
-      this.sphericalDelta.set(0, 0, 0);
-      this.scale = 1;
-    }
-  }
-}
-// FUTURE MIGRATION NOTE: For future enhancements Ive considered using react-three-fiber (https://docs.pmnd.rs/react-three-fiber Read More about later) to manage the 3D scene as a React component. 7/15/2025
-// This would allow for more declarative scene construction, easier integration of UI state (e.g., solo planet views, moons, overlays), and better React lifecycle management.
+import { OrbitControls } from '../utils/OrbitControls';
 
 export default function SolarSystemView() {
   const mountRef = useRef(null);
@@ -117,6 +29,7 @@ export default function SolarSystemView() {
   const controlsRef = useRef();
   const sunMeshRef = useRef();
   const planetObjectsRef = useRef();
+  const planetNamesRef   = useRef([]);
   const startTimeRef = useRef(Date.now());
 
 
@@ -204,6 +117,7 @@ export default function SolarSystemView() {
     const solarSystem = new THREE.Group();
     const planetObjects = {};
     planetObjectsRef.current = planetObjects;
+    planetNamesRef.current = Object.keys(planetOrbitData);
     const orbitLines = []; // Array to store orbit line references
     orbitLinesRef.current = orbitLines; // Store reference for external access
 
@@ -219,7 +133,7 @@ export default function SolarSystemView() {
     const createPlanetSystem = (planetName) => {
       const data = planetOrbitData[planetName];
       const group = new THREE.Group();
-      const mesh = new Planet(data.radius, 0, data.texture).getMesh();
+      const mesh = new Planet(data.radius, data.texture).getMesh();
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
@@ -291,12 +205,6 @@ export default function SolarSystemView() {
         rings.renderOrder = 1; // Ensure rings render after the planet
         group.add(rings);
         
-        // Debug: Log that rings were created
-        // console.log(`Created rings for ${planetName}:`, {
-        //   type: data.ringType,
-        //   innerRadius: data.radius * 1.4,
-        //   outerRadius: data.radius * 2.0
-        // });
       }
       
       // Add atmosphere glow for planets with atmospheres
@@ -324,32 +232,30 @@ export default function SolarSystemView() {
       return { group, mesh };
     };
 
-    // Create asteroid belt
+    // Create asteroid belt using InstancedMesh — one draw call for all asteroids
     const createAsteroidBelt = () => {
-      const asteroidGroup = new THREE.Group();
-      const asteroidCount = 200;
-      
-      for (let i = 0; i < asteroidCount; i++) {
-        const asteroidGeometry = new THREE.SphereGeometry(0.02 + Math.random() * 0.03, 8, 8);
-        const asteroidMaterial = new THREE.MeshBasicMaterial({ 
-          color: 0x8B7355,
-          transparent: true,
-          opacity: 0.7
-        });
-        const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
-        
-        // Position asteroids in a belt between Mars and Jupiter 
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = 24 + Math.random() * 2; // Between 24-26 units (between Mars at 20 and Jupiter at 28)
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        const y = (Math.random() - 0.5) * 0.5; //  vertical variations
-        
-        asteroid.position.set(x, y, z);
-        asteroidGroup.add(asteroid);
+      const COUNT    = 200;
+      const geometry = new THREE.SphereGeometry(1, 5, 5);
+      const material = new THREE.MeshBasicMaterial({ color: 0x8B7355, transparent: true, opacity: 0.7 });
+      const mesh     = new THREE.InstancedMesh(geometry, material, COUNT);
+
+      const matrix     = new THREE.Matrix4();
+      const position   = new THREE.Vector3();
+      const quaternion = new THREE.Quaternion();
+      const scale      = new THREE.Vector3();
+
+      for (let i = 0; i < COUNT; i++) {
+        const angle  = Math.random() * 2 * Math.PI;
+        const radius = 24 + Math.random() * 2;
+        const size   = 0.02 + Math.random() * 0.03;
+        position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 0.5, Math.sin(angle) * radius);
+        scale.setScalar(size);
+        matrix.compose(position, quaternion, scale);
+        mesh.setMatrixAt(i, matrix);
       }
-      
-      scene.add(asteroidGroup);
+
+      mesh.instanceMatrix.needsUpdate = true;
+      scene.add(mesh);
     };
 
     // Create planets using the enhanced data
@@ -370,6 +276,7 @@ export default function SolarSystemView() {
       if (renderer.domElement && mountRef.current?.contains(renderer.domElement)) {
         mountRef.current.removeChild(renderer.domElement);
       }
+      controls.dispose();
       cleanupResize();
       renderer.dispose();
     };
@@ -385,7 +292,7 @@ export default function SolarSystemView() {
     
     sunMeshRef.current.rotation.y += 0.002;
 
-    Object.keys(planetObjectsRef.current).forEach(name => {
+    planetNamesRef.current.forEach(name => {
       const planet = planetObjectsRef.current[name];
       // Calculate orbital position based on time, period, and speed
       const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed

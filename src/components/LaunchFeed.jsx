@@ -15,7 +15,6 @@ import {
   Icon,
   Tooltip,
   Button,
-  useColorMode,
   Collapse,
   Divider,
   Link,
@@ -23,15 +22,14 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText
+  StatHelpText,
 } from "@chakra-ui/react";
 import {
-  TimeIcon,
   ExternalLinkIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  StarIcon,
-  InfoIcon
+  InfoIcon,
+  TimeIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube } from 'react-icons/fa';
 
@@ -141,7 +139,6 @@ function LaunchStatusBadge({ status }) {
  */
 function LaunchCard({ launch }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { colorMode } = useColorMode();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -155,20 +152,19 @@ function LaunchCard({ launch }) {
       timeZoneName: 'short'
     });
   };
-//CHANGE IMAGES TO WEBP (more efficent than jpg)
   const getAgencyLogo = (agency) => {
-    if (!agency) return "/logos/defaultAgency.jpg"
+    if (!agency) return "/logos/defaultAgency.jpg";
     const logos = {
       'NASA': "/logos/nasa.jpg",
-      'SpaceX':"/logos/spacex.jpeg",
+      'SpaceX': "/logos/spacex.jpeg",
       'ULA': "/logos/ula.jpg",
       'ESA': "/logos/esa.jpg",
       'JAXA': "/logos/jaxa.jpg",
       'Russian Federal Space Agency (ROSCOSMOS)': "/logos/Roscosmos.jpg",
-      'China Aerospace Science and Technology Corporation' : "/logos/casc.jpg",
-      'Blue Origin' : "/logos/blueorigin.jpg"
+      'China Aerospace Science and Technology Corporation': "/logos/casc.jpg",
+      'Blue Origin': "/logos/blueorigin.jpg",
     };
-    return logos[agency] || "/logos/defaultAgency";
+    return logos[agency] || "/logos/defaultAgency.jpg";
   };
 
   return (
@@ -438,7 +434,7 @@ function LaunchFeed() {
       
       <Box textAlign="center" pt={4}>
         <Text fontSize="sm" color="text.secondary">
-          Showing {launches.length} upcoming launches *** Data from The Space Devs API
+          Showing {launches.length} upcoming launches · Data from The Space Devs API
         </Text>
       </Box>
     </VStack>

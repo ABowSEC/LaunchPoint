@@ -12,7 +12,6 @@ import {
   VStack,
   Text,
   useDisclosure,
-  useColorModeValue,
   Spinner
 } from "@chakra-ui/react";
 import { useRef, useState } from "react";
@@ -56,7 +55,6 @@ export default function ChatBotDrawer() {
     });
 
     const data = await res.json();
-    console.log("OpenAI response:", data);
 
     const reply = data.choices?.[0]?.message;
     if (reply) {
@@ -110,9 +108,11 @@ export default function ChatBotDrawer() {
         size="sm"
       >
         <DrawerOverlay />
-        <DrawerContent bg={useColorModeValue("white", "gray.800")}> 
+        <DrawerContent>
           <DrawerCloseButton />
-          <DrawerHeader borderBottomWidth="1px">Ask HAL</DrawerHeader>
+          <DrawerHeader borderBottomWidth="1px" borderColor="border.default">
+            Ask HAL
+          </DrawerHeader>
 
           <DrawerBody>
             <VStack align="stretch" spacing={4} h="full">
@@ -120,14 +120,15 @@ export default function ChatBotDrawer() {
                 {messages.map((msg, i) => (
                   <Box
                     key={i}
-                    bg={msg.role === "user" ? "teal.100" : "gray.100"}
-                    color="gray.800"
+                    bg={msg.role === "user" ? "brand.700" : "bg.elevated"}
                     p={3}
                     borderRadius="md"
                     mb={2}
                   >
-                    <Text fontSize="sm" fontWeight="bold">{msg.role}</Text>
-                    <Text>{msg.content}</Text>
+                    <Text fontSize="xs" fontWeight="bold" color="text.secondary" mb={1}>
+                      {msg.role === "user" ? "You" : "HAL-9000"}
+                    </Text>
+                    <Text color="text.primary">{msg.content}</Text>
                   </Box>
                 ))}
                 {loading && <Spinner size="sm" color="teal.500" />}

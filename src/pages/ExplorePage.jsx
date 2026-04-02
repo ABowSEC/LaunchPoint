@@ -163,11 +163,11 @@ function SearchResults({ activeQuery }) {
 
       <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered>
         <ModalOverlay />
-        <ModalContent bg="gray.900">
-          <ModalHeader color="white" pr={10} fontSize="md">
+        <ModalContent>
+          <ModalHeader pr={10} fontSize="md">
             {metaFor(selected)?.title}
           </ModalHeader>
-          <ModalCloseButton color="white" />
+          <ModalCloseButton />
           <ModalBody pb={6}>
             <Image
               src={thumbnailFor(selected)}
@@ -182,7 +182,7 @@ function SearchResults({ activeQuery }) {
               </Badge>
             )}
             {metaFor(selected)?.description && (
-              <Text color="gray.300" fontSize="sm" mt={2}>
+              <Text color="text.secondary" fontSize="sm" mt={2}>
                 {metaFor(selected).description}
               </Text>
             )}

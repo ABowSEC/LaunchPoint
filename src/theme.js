@@ -68,6 +68,16 @@ const theme = extendTheme({
     Divider: {
       baseStyle: { borderColor: 'border.default', opacity: 1 },
     },
+    Modal: {
+      baseStyle: {
+        dialog: { bg: 'bg.card' },
+      },
+    },
+    Drawer: {
+      baseStyle: {
+        dialog: { bg: 'bg.card' },
+      },
+    },
   },
 });
 

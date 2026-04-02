@@ -68,7 +68,6 @@ export default function Home() {
         }
 
         const data = await res.json();
-        console.log('APOD Data:', data); 
         setApod(data);
       } catch (err) {
         console.error('APOD fetch error:', err);
@@ -284,7 +283,7 @@ export default function Home() {
       {/* Fullscreen Image Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="6xl">
         <ModalOverlay />
-        <ModalContent bg="gray.900" color="white">
+        <ModalContent>
           <ModalHeader>
             <HStack justify="space-between" align="center">
               <Text>{apod?.title}</Text>
@@ -319,8 +318,8 @@ export default function Home() {
           <ModalBody pb={6}>
             {apod && (
               <VStack spacing={4}>
-                <Image 
-                  src={apod.url} 
+                <Image
+                  src={apod.url}
                   alt={apod.title}
                   maxH="70vh"
                   objectFit="contain"
@@ -328,7 +327,7 @@ export default function Home() {
                   fallbackSrc="/hal9000.png"
                 />
                 <VStack spacing={3} w="100%" textAlign="left">
-                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
+                  <Box w="100%" p={4} bg="bg.elevated" borderRadius="lg">
                     <Heading size="sm" mb={3} bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
                       Image Information
                     </Heading>
@@ -353,12 +352,12 @@ export default function Home() {
                       </Box>
                     </SimpleGrid>
                   </Box>
-                  
-                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
+
+                  <Box w="100%" p={4} bg="bg.elevated" borderRadius="lg">
                     <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
                       Description
                     </Heading>
-                    <Text fontSize="md" color="white.500" lineHeight="1.6">
+                    <Text fontSize="md" color="text.primary" lineHeight="1.6">
                       {apod.explanation}
                     </Text>
                   </Box>

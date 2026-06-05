@@ -309,11 +309,7 @@ export default function Home() {
       {/* Fullscreen Image Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="6xl">
         <ModalOverlay />
-<<<<<<< HEAD
         <ModalContent bg="bg.card" color="text.primary" border="1px solid" borderColor="border.default">
-=======
-        <ModalContent>
->>>>>>> bd26c96b9cc51a78c9ce771cec4bee5f117f896f
           <ModalHeader>
             <HStack justify="space-between" align="center">
               <Text>{apod?.title}</Text>
@@ -358,13 +354,8 @@ export default function Home() {
                   fallbackSrc="/hal9000.png"
                 />
                 <VStack spacing={3} w="100%" textAlign="left">
-<<<<<<< HEAD
                   <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">
                     <Heading as="h3" size="sm" mb={3} color="text.primary">
-=======
-                  <Box w="100%" p={4} bg="bg.elevated" borderRadius="lg">
-                    <Heading size="sm" mb={3} bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
->>>>>>> bd26c96b9cc51a78c9ce771cec4bee5f117f896f
                       Image Information
                     </Heading>
                     <SimpleGrid columns={[1, 2]} spacing={4}>
@@ -388,21 +379,12 @@ export default function Home() {
                       </Box>
                     </SimpleGrid>
                   </Box>
-<<<<<<< HEAD
-                  
+
                   <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">
                     <Heading as="h3" size="sm" mb={3} color="text.primary">
                       Description
                     </Heading>
                     <Text fontSize="md" color="text.primary" lineHeight="1.625" sx={{ textWrap: 'pretty' }}>
-=======
-
-                  <Box w="100%" p={4} bg="bg.elevated" borderRadius="lg">
-                    <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
-                      Description
-                    </Heading>
-                    <Text fontSize="md" color="text.primary" lineHeight="1.6">
->>>>>>> bd26c96b9cc51a78c9ce771cec4bee5f117f896f
                       {apod.explanation}
                     </Text>
                   </Box>

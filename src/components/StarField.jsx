@@ -99,16 +99,32 @@ export default function StarField() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
     let stars = [];
     const shootingStars = buildShootingStarPool();
     let nextSpawn = SHOOTING_MEAN_INTERVAL + rand(-SHOOTING_SPREAD, SHOOTING_SPREAD);
     let frame = 0;
     let animId;
 
+    // Reduced-motion alternative: a still star field, painted once. Same depth
+    // and density, no drift, twinkle, or shooting stars.
+    const drawStatic = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const star of stars) {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${star.hue}, ${star.baseOpacity})`;
+        ctx.fill();
+      }
+    };
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       stars = buildStars(canvas.width, canvas.height);
+      if (prefersReducedMotion) drawStatic();
     };
 
     resize();
@@ -154,7 +170,11 @@ export default function StarField() {
       animId = requestAnimationFrame(draw);
     };
 
-    draw();
+    if (prefersReducedMotion) {
+      drawStatic();
+    } else {
+      draw();
+    }
 
     return () => {
       cancelAnimationFrame(animId);

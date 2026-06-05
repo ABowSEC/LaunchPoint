@@ -45,8 +45,8 @@ const theme = extendTheme({
   colors,
   semanticTokens,
   fonts: {
-    heading: `'Inter', -apple-system, sans-serif`,
-    body:    `'Inter', -apple-system, sans-serif`,
+    heading: `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif`,
+    body:    `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif`,
   },
   styles: {
     global: {
@@ -58,6 +58,18 @@ const theme = extendTheme({
       '::selection': {
         bg: 'brand.700',
         color: 'white',
+      },
+      // Honor the OS reduced-motion preference everywhere: CSS transitions and
+      // keyframe animations collapse to ~instant, so hover lifts and reveals
+      // snap to their end state instead of moving. JS-driven motion (Framer,
+      // the StarField canvas) is handled at those components directly.
+      '@media (prefers-reduced-motion: reduce)': {
+        '*, *::before, *::after': {
+          animationDuration: '0.01ms !important',
+          animationIterationCount: '1 !important',
+          transitionDuration: '0.01ms !important',
+          scrollBehavior: 'auto !important',
+        },
       },
     },
   },

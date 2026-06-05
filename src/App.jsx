@@ -14,7 +14,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { Suspense } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
 import Home from './pages/Home';
 import LaunchPage from './pages/LaunchPage';
@@ -149,17 +149,19 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <Router>
-      <Box minH="100vh" bg="bg.body">
-        <StarField />
-        <Box position="relative" zIndex={1}>
-          <Navigation />
-          <Box as="main">
-            <AnimatedRoutes />
+    <MotionConfig reducedMotion="user">
+      <Router>
+        <Box minH="100vh" bg="bg.body">
+          <StarField />
+          <Box position="relative" zIndex={1}>
+            <Navigation />
+            <Box as="main">
+              <AnimatedRoutes />
+            </Box>
           </Box>
         </Box>
-      </Box>
-    </Router>
+      </Router>
+    </MotionConfig>
   );
 }
 

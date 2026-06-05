@@ -21,8 +21,10 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
-  useDisclosure
+  useDisclosure,
+  usePrefersReducedMotion
 } from "@chakra-ui/react";
+import { keyframes } from "@emotion/react";
 import {
   ExternalLinkIcon,
   CalendarIcon,
@@ -31,6 +33,13 @@ import {
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
 
+// Content-arrival reveal: APOD data lands a beat after the page; a short
+// fade-and-rise acknowledges it without page-load choreography.
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
 export default function Home() {
   const [apod, setApod] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +47,12 @@ export default function Home() {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Reveal only when motion is allowed; otherwise content is simply present.
+  const revealAnim = prefersReducedMotion
+    ? undefined
+    : `${fadeUp} 0.45s cubic-bezier(0.16, 1, 0.3, 1) both`;
 
   useEffect(() => {
     const fetchAPOD = async () => {
@@ -68,7 +83,6 @@ export default function Home() {
         }
 
         const data = await res.json();
-        console.log('APOD Data:', data); 
         setApod(data);
       } catch (err) {
         console.error('APOD fetch error:', err);
@@ -96,9 +110,9 @@ export default function Home() {
     if (error) {
       return (
         <Box maxW="lg" mx="auto" p={6} borderRadius="lg" bg="bg.card" border="1px solid" borderColor="red.800">
-          <Heading size="md" color="red.400" mb={2}>Error</Heading>
+          <Heading as="h2" size="md" color="red.400" mb={2}>Error</Heading>
           <Text color="text.secondary">{error}</Text>
-          <Button mt={4} onClick={() => window.location.reload()} colorScheme="red" leftIcon={<ArrowForwardIcon />}>
+          <Button mt={4} onClick={() => window.location.reload()} colorScheme="brand" leftIcon={<ArrowForwardIcon />}>
             Try Again
           </Button>
         </Box>
@@ -107,16 +121,15 @@ export default function Home() {
   
     if (!apod) return <Text>No content available</Text>;
   
-    const isVideo = apod.media_type === "video";//Minor issue from NASA API where it returns video as image.
-    const isImage = apod.media_type === "image" || /\.(gif|jpe?g|png)$/i.test(apod.url);//Allows even if labeled other if ends with /\(allowed)$/i
-    const isOther = !isImage && !isVideo;//this is for the future to add other media types currently not supported from NASA API's like gifs. Need to ID the issue when APOD is not an image. 
-  
+    const isVideo = apod.media_type === "video";//NASA API occasionally labels video as image; check media_type first.
+    const isImage = apod.media_type === "image" || /\.(gif|jpe?g|png)$/i.test(apod.url);//Falls through to the non-image branch when neither matches (e.g. interactive embeds).
+
     const description = apod.explanation || "";
     const shouldTruncate = description.length > 200;
     const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 200)}...`;
   
     return (
-      <VStack spacing={8}>
+      <VStack spacing={8} animation={revealAnim}>
         <Box bg="bg.card" p={6} rounded="xl" shadow="lg" position="relative">
           {isVideo ? (
             apod.thumbnail_url ? (
@@ -136,7 +149,7 @@ export default function Home() {
                   top="50%"
                   left="50%"
                   transform="translate(-50%, -50%)"
-                  colorScheme="red"
+                  colorScheme="brand"
                   size="lg"
                   isRound
                   bg="whiteAlpha.800"
@@ -158,8 +171,12 @@ export default function Home() {
                 fallbackSrc="/hal9000.png"
                 cursor="pointer"
                 onClick={onOpen}
-                transition="transform 0.3s ease"
-                _hover={{ transform: "scale(1.02)" }}
+                transition="transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
+                _hover={
+                  prefersReducedMotion
+                    ? { filter: "brightness(1.08)" }
+                    : { transform: "scale(1.02)" }
+                }
               />
               <IconButton
                 position="absolute"
@@ -168,11 +185,15 @@ export default function Home() {
                 aria-label="View fullscreen"
                 icon={<ExternalLinkIcon />}
                 onClick={onOpen}
-                colorScheme="blue"
+                colorScheme="brand"
                 variant="solid"
                 opacity={0.8}
-                _hover={{ opacity: 1, transform: "scale(1.1)" }}
-                transition="all 0.3s ease"
+                _hover={
+                  prefersReducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, transform: "scale(1.1)" }
+                }
+                transition="opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
               />
             </>
           ) : (
@@ -192,7 +213,7 @@ export default function Home() {
                 href="https://apod.nasa.gov/apod/astropix.html"
                 target="_blank"
                 leftIcon={<ExternalLinkIcon />}
-                colorScheme="teal"
+                colorScheme="brand"
               >
                 View on NASA APOD
               </Button>
@@ -201,32 +222,23 @@ export default function Home() {
         </Box>
   
         <VStack spacing={4} textAlign="center">
-          <Heading size="lg">{apod.title}</Heading>
+          <Heading as="h2" size="lg" fontWeight="700">{apod.title}</Heading>
   
           <HStack justify="center" wrap="wrap" spacing={3}>
             {apod.date && (
-              <Badge colorScheme="purple" px={3} py={1} borderRadius="full">
+              <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
                 <CalendarIcon mr={2} />
                 {new Date(apod.date).toLocaleDateString("en-US")}
               </Badge>
             )}
-            {apod.copyright && apod.copyright.trim() !== "" ? (
-              <Badge colorScheme="teal" px={3} py={1} borderRadius="full">
-                Photography by {apod.copyright}
-              </Badge>
-            ) : (
-              <Badge colorScheme="gray" px={3} py={1} borderRadius="full">
-                NASA Image
-              </Badge>
-            )}
           </HStack>
   
-          <Text fontSize="md" maxW="3xl" color="text.primary">
+          <Text fontSize="md" maxW="65ch" color="text.primary" sx={{ textWrap: 'pretty' }}>
             {displayDescription}
           </Text>
   
           {shouldTruncate && (
-            <Button variant="link" colorScheme="teal" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
+            <Button variant="link" colorScheme="brand" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
               {showFullDescription ? "Show Less" : "Read More"}
             </Button>
           )}
@@ -244,11 +256,19 @@ export default function Home() {
     <Box py={16} px={6}>
       <Container maxW="7xl">
         <VStack spacing={10} textAlign="center">
-          <Heading size="2xl" bgGradient="linear(to-r, blue.300, brand.400)" bgClip="text">
+          <Heading
+            as="h1"
+            fontSize="clamp(2.25rem, 5vw, 3rem)"
+            fontWeight="700"
+            letterSpacing="-0.02em"
+            lineHeight="1.1"
+            color="text.primary"
+            sx={{ textWrap: 'balance' }}
+          >
             Welcome to LaunchPoint
           </Heading>
-          <Text fontSize="xl" color="text.secondary" maxW="560px">
-            Explore the universe — powered by NASA data
+          <Text fontSize="xl" color="text.secondary" maxW="46ch">
+            Live imagery, telemetry, and launch schedules, straight from NASA.
           </Text>
           <HStack spacing={4}>
             <Button
@@ -256,9 +276,13 @@ export default function Home() {
               to="/explore"
               size="lg"
               colorScheme="brand"
-              _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }}
-              _active={{ transform: 'translateY(0)' }}
-              transition="all 0.2s"
+              _hover={
+                prefersReducedMotion
+                  ? { boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
+                  : { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
+              }
+              _active={prefersReducedMotion ? undefined : { transform: 'translateY(0)' }}
+              transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease"
             >
               Start Exploring
             </Button>
@@ -268,8 +292,12 @@ export default function Home() {
               size="lg"
               variant="outline"
               colorScheme="brand"
-              _hover={{ transform: 'translateY(-2px)', bg: 'whiteAlpha.50' }}
-              transition="all 0.2s"
+              _hover={
+                prefersReducedMotion
+                  ? { bg: 'whiteAlpha.50' }
+                  : { transform: 'translateY(-2px)', bg: 'whiteAlpha.50' }
+              }
+              transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease"
             >
               View Launches
             </Button>
@@ -284,7 +312,7 @@ export default function Home() {
       {/* Fullscreen Image Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="6xl">
         <ModalOverlay />
-        <ModalContent bg="gray.900" color="white">
+        <ModalContent bg="bg.card" color="text.primary" border="1px solid" borderColor="border.default">
           <ModalHeader>
             <HStack justify="space-between" align="center">
               <Text>{apod?.title}</Text>
@@ -292,8 +320,9 @@ export default function Home() {
                 <Button
                   leftIcon={<ExternalLinkIcon />}
                   size="sm"
+                  variant="outline"
                   onClick={() => window.open(apod?.url, '_blank')}
-                  colorScheme="blue"
+                  colorScheme="brand"
                 >
                   Open Original
                 </Button>
@@ -308,7 +337,7 @@ export default function Home() {
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  colorScheme="green"
+                  colorScheme="brand"
                 >
                   Download
                 </Button>
@@ -328,8 +357,8 @@ export default function Home() {
                   fallbackSrc="/hal9000.png"
                 />
                 <VStack spacing={3} w="100%" textAlign="left">
-                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
-                    <Heading size="sm" mb={3} bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
+                  <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">
+                    <Heading as="h3" size="sm" mb={3} color="text.primary">
                       Image Information
                     </Heading>
                     <SimpleGrid columns={[1, 2]} spacing={4}>
@@ -344,7 +373,7 @@ export default function Home() {
                       {apod.copyright && apod.copyright.trim() !== "" && (
                         <Box>
                           <Text fontSize="sm" color="text.secondary">Photographer</Text>
-                          <Text fontWeight="bold" color="teal.300">{apod.copyright}</Text>
+                          <Text fontWeight="bold" color="text.primary">{apod.copyright}</Text>
                         </Box>
                       )}
                       <Box>
@@ -354,11 +383,11 @@ export default function Home() {
                     </SimpleGrid>
                   </Box>
                   
-                  <Box w="100%" p={4} bg="gray.800" borderRadius="lg">
-                    <Heading size="sm" mb={3} bgGradient="linear(to-r, purple.400, pink.500)" bgClip="text">
+                  <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">
+                    <Heading as="h3" size="sm" mb={3} color="text.primary">
                       Description
                     </Heading>
-                    <Text fontSize="md" color="white.500" lineHeight="1.6">
+                    <Text fontSize="md" color="text.primary" lineHeight="1.625" sx={{ textWrap: 'pretty' }}>
                       {apod.explanation}
                     </Text>
                   </Box>

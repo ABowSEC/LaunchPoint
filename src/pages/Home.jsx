@@ -8,6 +8,7 @@ import {
   Heading,
   SimpleGrid,
   Spinner,
+  Skeleton,
   Image,
   IconButton,
   Divider,
@@ -45,6 +46,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgLoaded(false);
+    setImgError(false);
+  }, [apod?.url]);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -60,12 +68,20 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
+        const today = new Date().toISOString().slice(0, 10);
+        const cacheKey = `apod_${today}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          setApod(JSON.parse(cached));
+          return;
+        }
+
         const apiKey = import.meta.env.VITE_NASA_API_KEY;
-        
+
         if (!apiKey || apiKey === 'DEMO_KEY') {
           console.warn('Using DEMO_KEY - limited to 1000 requests per hour');
         }
-        
+
         const res = await fetch(
           `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
         );
@@ -83,6 +99,11 @@ export default function Home() {
         }
 
         const data = await res.json();
+        // Evict any stale APOD entries before writing the new one
+        Object.keys(localStorage)
+          .filter(k => k.startsWith('apod_') && k !== cacheKey)
+          .forEach(k => localStorage.removeItem(k));
+        localStorage.setItem(cacheKey, JSON.stringify(data));
         setApod(data);
       } catch (err) {
         console.error('APOD fetch error:', err);
@@ -162,22 +183,37 @@ export default function Home() {
             )
           ) : isImage ? (
             <>
-              <Image 
-                src={apod.url} 
-                alt={apod.title} 
-                rounded="md" 
-                maxH="500px" 
-                objectFit="cover" 
-                fallbackSrc="/hal9000.png"
-                cursor="pointer"
-                onClick={onOpen}
-                transition="transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
-                _hover={
-                  prefersReducedMotion
-                    ? { filter: "brightness(1.08)" }
-                    : { transform: "scale(1.02)" }
-                }
-              />
+              {!imgLoaded && !imgError && (
+                <Skeleton rounded="md" height="500px" />
+              )}
+              {imgError ? (
+                <Image
+                  src="/hal9000.png"
+                  alt="Image unavailable"
+                  rounded="md"
+                  maxH="500px"
+                  objectFit="contain"
+                />
+              ) : (
+                <Image
+                  src={apod.url}
+                  alt={apod.title}
+                  rounded="md"
+                  maxH="500px"
+                  objectFit="cover"
+                  cursor="pointer"
+                  display={imgLoaded ? "block" : "none"}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
+                  onClick={onOpen}
+                  transition="transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
+                  _hover={
+                    prefersReducedMotion
+                      ? { filter: "brightness(1.08)" }
+                      : { transform: "scale(1.02)" }
+                  }
+                />
+              )}
               <IconButton
                 position="absolute"
                 top="8"
@@ -231,18 +267,33 @@ export default function Home() {
                 {new Date(apod.date).toLocaleDateString("en-US")}
               </Badge>
             )}
+            {apod.copyright && apod.copyright.trim() !== "" ? (
+              <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
+                Photography by {apod.copyright}
+              </Badge>
+            ) : (
+              <Badge bg="bg.elevated" color="text.secondary" px={3} py={1} borderRadius="full" textTransform="none">
+                NASA Image
+              </Badge>
+            )}
           </HStack>
-  
+
           <Text fontSize="md" maxW="65ch" color="text.primary" sx={{ textWrap: 'pretty' }}>
             {displayDescription}
           </Text>
-  
+
           {shouldTruncate && (
             <Button variant="link" colorScheme="brand" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
               {showFullDescription ? "Show Less" : "Read More"}
             </Button>
           )}
-  
+
+          <Text fontSize="sm" color="text.secondary" fontStyle="italic">
+            {apod.copyright && apod.copyright.trim() !== ""
+              ? `Photography by ${apod.copyright}`
+              : "Courtesy of NASA"}
+          </Text>
+
         </VStack>
       </VStack>
     );
@@ -351,7 +402,7 @@ export default function Home() {
                   maxH="70vh"
                   objectFit="contain"
                   borderRadius="lg"
-                  fallbackSrc="/hal9000.png"
+                  fallback={<Skeleton height="60vh" width="100%" borderRadius="lg" />}
                 />
                 <VStack spacing={3} w="100%" textAlign="left">
                   <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">

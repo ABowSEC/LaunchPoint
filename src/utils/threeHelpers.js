@@ -151,22 +151,59 @@ export function createOrbitEllipse(a, b, inclination) {
   return new THREE.Line(geometry, material);
 }
 
+const ATMOSPHERE_VERTEX_SHADER = /* glsl */ `
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+  void main() {
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  }
+`;
+
+// Fresnel rim glow: intensity peaks where the shell is edge-on to the camera
+// (the planet's limb) and falls off toward the centre and the outer edge,
+// so the atmosphere reads as scattered light rather than a flat halo.
+const ATMOSPHERE_FRAGMENT_SHADER = /* glsl */ `
+  uniform vec3  uColor;
+  uniform float uIntensity;
+  uniform float uPower;
+  varying vec3  vWorldNormal;
+  varying vec3  vWorldPosition;
+  void main() {
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    // abs() keeps it stable for the BackSide shell, whose normals face inward.
+    float rim = 1.0 - abs(dot(vWorldNormal, viewDir));
+    float intensity = pow(rim, uPower) * uIntensity;
+    gl_FragColor = vec4(uColor, clamp(intensity, 0.0, 1.0));
+  }
+`;
+
 /**
- * Creates an atmosphere/glow sphere around a planet using BackSide additive blending.
+ * Creates a Fresnel-based atmosphere glow shell around a planet. The glow is
+ * concentrated on the limb and view-dependent, avoiding the flat "sticker"
+ * look of a uniform-opacity halo.
  * @param {number} planetRadius - The planet's geometry radius
  * @param {number} color - Hex color for the atmosphere (e.g. 0x4488ff)
  * @param {Object} options
  * @param {number} options.scale - How much larger than the planet (default 1.18)
- * @param {number} options.opacity - Glow opacity (default 0.35)
+ * @param {number} options.opacity - Peak rim intensity (default 0.35)
+ * @param {number} options.power - Falloff sharpness; higher = tighter rim (default 3.0)
  * @returns {THREE.Mesh}
  */
 export function createAtmosphereGlow(planetRadius, color, options = {}) {
-  const { scale = 1.18, opacity = 0.35 } = options;
-  const geometry = new THREE.SphereGeometry(planetRadius * scale, 32, 32);
-  const material = new THREE.MeshBasicMaterial({
-    color,
+  const { scale = 1.18, opacity = 0.35, power = 3.0 } = options;
+  const geometry = new THREE.SphereGeometry(planetRadius * scale, 48, 48);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor:     { value: new THREE.Color(color) },
+      uIntensity: { value: opacity },
+      uPower:     { value: power },
+    },
+    vertexShader: ATMOSPHERE_VERTEX_SHADER,
+    fragmentShader: ATMOSPHERE_FRAGMENT_SHADER,
     transparent: true,
-    opacity,
     side: THREE.BackSide,
     blending: THREE.AdditiveBlending,
     depthWrite: false,

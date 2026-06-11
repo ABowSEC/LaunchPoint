@@ -30,7 +30,6 @@ export default function SolarSystemView() {
   const sunMeshRef = useRef();
   const planetObjectsRef = useRef();
   const planetNamesRef   = useRef([]);
-  const startTimeRef = useRef(Date.now());
 
 
 
@@ -315,23 +314,27 @@ export default function SolarSystemView() {
   }, []); // Only run once on mount
 
   // Animation callback using the custom hook
-  const animate = useCallback((deltaTime, time) => {
+  const animate = useCallback((deltaTime) => {
     if (!sunMeshRef.current || !planetObjectsRef.current || !controlsRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) {
       return;
     }
 
-    const elapsedTime = (time - startTimeRef.current) * 0.001; // Convert to seconds
-    
+    // Seconds elapsed this frame, clamped so a backgrounded tab doesn't
+    // produce one enormous step when it resumes.
+    const dt = Math.min(deltaTime, 100) * 0.001;
+
     sunMeshRef.current.rotation.y += 0.002;
 
     planetNamesRef.current.forEach(name => {
       const planet = planetObjectsRef.current[name];
-      // Calculate orbital position based on time, period, and speed
-      const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed
+      // Integrate orbital phase incrementally: changing speed only affects
+      // motion from here on, so planets never jump to a recomputed position.
+      planet.angle += (dt * speedRef.current) / (planet.period * 0.1);
+      const t = planet.angle + planet.startTime;
       const x = Math.cos(t) * planet.a;
       const z = Math.sin(t) * planet.b;
       const y = Math.sin(planet.inclination * Math.PI / 180) * z;
-      
+
       // Move the entire group (planet + rings) to the orbital position
       planet.group.position.set(x, y, z);
       planet.mesh.rotation.y += 0.02;

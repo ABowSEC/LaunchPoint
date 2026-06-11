@@ -43,6 +43,7 @@ export const COMMANDS = {
     gl('  rover [name]      '), dim('    Mars rover latest image info'),
     dim('    curiosity | perseverance | spirit | opportunity'),
     gl('  date              '), dim('    Current UTC date & time'),
+    gl('  tricks           '), dim('    secrets? We don\'t have any...Mr. Konami'),
     gl('  clear             '), dim('    Clear the terminal'),
     sep(),
   ],

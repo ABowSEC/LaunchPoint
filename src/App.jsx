@@ -4,6 +4,7 @@ import {
   Route,
   Link as RouterLink,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import {
   Box,
@@ -13,7 +14,7 @@ import {
   Container,
   Text,
 } from '@chakra-ui/react';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
 import Home from './pages/Home';
@@ -24,7 +25,9 @@ import SolarSimPage from './pages/SolarSimPage';
 import ISSLivePage from './pages/issLive';
 import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
+import WarpTransition from './components/WarpTransition';
 import NavLaunchCountdown from './components/NavLaunchCountdown';
+import { useKonamiCode } from './hooks/useKonamiCode';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -42,9 +45,11 @@ const navigationItems = [
   { path: '/launches', label: 'Launches' },
   { path: '/mars',     label: 'Mars' },
   { path: '/explore',  label: 'Explore' },
-  { path: '/solarsim', label: 'Solar System' },
   { path: '/iss',      label: 'ISS' },
 ];
+
+// /solarsim is intentionally unlisted // reachable via the Konami code
+// (see KonamiWarp below) or a direct link, as a hidden easter egg.
 
 function Navigation() {
   const location = useLocation();
@@ -111,6 +116,29 @@ function Navigation() {
   );
 }
 
+// Hidden easter egg: enter the Konami code anywhere on the site to warp
+// straight to the solar system view.
+function KonamiWarp() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [warping, setWarping] = useState(false);
+
+  useKonamiCode(() => {
+    if (location.pathname !== '/solarsim') setWarping(true);
+  });
+
+  if (!warping) return null;
+
+  return (
+    <WarpTransition
+      onFinished={() => {
+        setWarping(false);
+        navigate('/solarsim');
+      }}
+    />
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
@@ -155,6 +183,7 @@ function App() {
       <Router>
         <Box minH="100vh" bg="bg.body">
           <StarField />
+          <KonamiWarp />
           <Box position="relative" zIndex={1}>
             <Navigation />
             <Box as="main">

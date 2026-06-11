@@ -87,8 +87,11 @@ export default function SolarSystemView() {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
+    // Capture the mount node so the cleanup closure doesn't read a ref that
+    // may have changed by the time it runs.
+    const mountNode = mountRef.current;
+    const width = mountNode.clientWidth;
+    const height = mountNode.clientHeight;
 
     // Create complete solar system scene using utility
     const { scene, camera, renderer, sun: sunMesh } = createSolarSystemScene(width, height, {
@@ -143,45 +146,48 @@ export default function SolarSystemView() {
         let ringGeometry, ringMaterial;
         
         switch (data.ringType) {
-          case 'saturn':
+          case 'saturn': {
             // Saturn's prominent golden rings with Cassini Division
             ringGeometry = new THREE.RingGeometry(data.radius * 1.8, data.radius * 3.0, 64);
             const saturnRingTexture = createRingTexture('saturn', data.radius * 1.8, data.radius * 3.0);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: saturnRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.9,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
-          case 'uranus':
+          }
+
+          case 'uranus': {
             //  dark, subtle rings
             ringGeometry = new THREE.RingGeometry(data.radius * 1.5, data.radius * 2.2, 32);
             const uranusRingTexture = createRingTexture('uranus', data.radius * 1.5, data.radius * 2.2);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: uranusRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.7,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
-          case 'neptune':
+          }
+
+          case 'neptune': {
             // Neptune's faint, clumpy rings
             ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 24);
             const neptuneRingTexture = createRingTexture('neptune', data.radius * 1.4, data.radius * 2.0);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: neptuneRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.6,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
+          }
+
           default:
             // Default ring style
             ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 48);
@@ -270,15 +276,41 @@ export default function SolarSystemView() {
     createAsteroidBelt();
 
     // Setup resize handler
-    const cleanupResize = setupResizeHandler(camera, renderer, mountRef.current);
+    const cleanupResize = setupResizeHandler(camera, renderer, mountNode);
+
+    // Planet map textures are cached/shared across mounts (see Planet.jsx),
+    // so they must survive this component's teardown — preserve them.
+    const preservedTextures = new Set();
+    Object.values(planetObjects).forEach(({ mesh }) => {
+      if (mesh.material?.map) preservedTextures.add(mesh.material.map);
+    });
 
     return () => {
-      if (renderer.domElement && mountRef.current?.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-      controls.dispose();
       cleanupResize();
+      controls.dispose();
+
+      // Release every GPU resource created for this scene: geometries,
+      // materials, and any non-shared textures. Without this, each warp-in
+      // leaks the full solar system worth of buffers and textures.
+      scene.traverse((obj) => {
+        obj.geometry?.dispose();
+        const materials = obj.material
+          ? (Array.isArray(obj.material) ? obj.material : [obj.material])
+          : [];
+        materials.forEach((material) => {
+          Object.values(material).forEach((value) => {
+            if (value?.isTexture && !preservedTextures.has(value)) value.dispose();
+          });
+          material.dispose();
+        });
+      });
+
+      if (renderer.domElement && mountNode?.contains(renderer.domElement)) {
+        mountNode.removeChild(renderer.domElement);
+      }
       renderer.dispose();
+      renderer.forceContextLoss(); // free the WebGL context so repeated
+                                   // mounts don't exhaust the browser's limit
     };
   }, []); // Only run once on mount
 

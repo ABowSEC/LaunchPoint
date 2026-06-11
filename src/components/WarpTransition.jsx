@@ -25,7 +25,7 @@ export default function WarpTransition({ onFinished }) {
     () =>
       Array.from({ length: STREAK_COUNT }, (_, i) => ({
         angle: (360 / STREAK_COUNT) * i + (Math.random() * 8 - 4),
-      length: 60 + Math.random() * 3~5,
+        length: 60 + Math.random() * 35,
         delay: Math.random() * 0.12,
       })),
     []

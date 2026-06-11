@@ -50,6 +50,16 @@ export const COMMANDS = {
 
   date: async () => [gl(new Date().toUTCString())],
 
+  tricks: async () => [
+    amb('CLASSIFIED // EYES ONLY'), sep(),
+    dim('You did not hear this from HAL...'),
+    dim(''),
+    cyn('  ↑ ↑ ↓ ↓ ← → ← →  B  A'),
+    dim(''),
+    gl('Punch it in anywhere on the site to engage warp drive.'),
+    dim('Destination: the solar system.'),
+  ],
+
   apod: async () => {
     const d = await safeFetch(
       `https://api.nasa.gov/planetary/apod?api_key=${NASA_KEY()}`

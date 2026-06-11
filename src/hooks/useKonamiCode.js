@@ -17,6 +17,17 @@ export function useKonamiCode(onComplete) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ignore keystrokes aimed at form fields so the sequence can't be
+      // driven (or accidentally triggered) while the user is typing.
+      const t = e.target;
+      if (
+        t instanceof HTMLInputElement ||
+        t instanceof HTMLTextAreaElement ||
+        t?.isContentEditable
+      ) {
+        return;
+      }
+
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const expected = KONAMI_SEQUENCE[progressRef.current];
 

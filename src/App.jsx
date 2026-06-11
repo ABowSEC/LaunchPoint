@@ -13,6 +13,7 @@ import {
   Spacer,
   Container,
   Text,
+  useToast,
 } from '@chakra-ui/react';
 import { Suspense, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
@@ -121,6 +122,7 @@ function Navigation() {
 function KonamiWarp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   const [warping, setWarping] = useState(false);
 
   useKonamiCode(() => {
@@ -134,6 +136,14 @@ function KonamiWarp() {
       onFinished={() => {
         setWarping(false);
         navigate('/solarsim');
+        toast({
+          title: 'Warp drive engaged',
+          description: 'Secret solar system sim unlocked. Welcome, navigator.',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+          position: 'bottom',
+        });
       }}
     />
   );

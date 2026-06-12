@@ -4,7 +4,7 @@ import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
 import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from "three";
 import Planet from "./Planet";
-import { createRingTexture, createOrbitEllipse, createAtmosphereGlow } from '../utils/threeHelpers';
+import { createRingTexture, createOrbitEllipse, createAtmosphereGlow, createPlanetHalo } from '../utils/threeHelpers';
 import { useAnimationFrame } from '../hooks/useAnimationFrame';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { useSyncedRef } from '../hooks/useSyncedRef';
@@ -123,13 +123,18 @@ export default function SolarSystemView() {
     const orbitLines = []; // Array to store orbit line references
     orbitLinesRef.current = orbitLines; // Store reference for external access
 
+    // Per-planet glow: `color/opacity/scale/power` drive the Fresnel rim
+    // atmosphere; `halo`/`haloOpacity` drive the soft outer sprite bloom.
     const ATMOSPHERE_CONFIG = {
-      Earth:   { color: 0x4488ff, opacity: 0.38, scale: 1.20 },
-      Venus:   { color: 0xffcc66, opacity: 0.42, scale: 1.22 },
-      Jupiter: { color: 0xffaa44, opacity: 0.28, scale: 1.15 },
-      Neptune: { color: 0x3366ff, opacity: 0.32, scale: 1.18 },
-      Uranus:  { color: 0x88ddff, opacity: 0.28, scale: 1.16 },
-      Mars:    { color: 0xff4422, opacity: 0.25, scale: 1.16 },
+      Mercury: { color: 0x9c8b7a, opacity: 0.12, scale: 1.10, halo: 2.4, haloOpacity: 0.10 },
+      Venus:   { color: 0xffcc66, opacity: 0.42, scale: 1.22, halo: 3.2, haloOpacity: 0.32 },
+      Earth:   { color: 0x4488ff, opacity: 0.38, scale: 1.20, halo: 3.0, haloOpacity: 0.28 },
+      Mars:    { color: 0xff4422, opacity: 0.25, scale: 1.16, halo: 2.8, haloOpacity: 0.18 },
+      Jupiter: { color: 0xffaa44, opacity: 0.22, scale: 1.15, halo: 3.0, haloOpacity: 0.14 },
+      Saturn:  { color: 0xf0d090, opacity: 0.24, scale: 1.14, halo: 2.6, haloOpacity: 0.16 },
+      Uranus:  { color: 0x88ddff, opacity: 0.28, scale: 1.16, halo: 3.0, haloOpacity: 0.22 },
+      Neptune: { color: 0x3366ff, opacity: 0.32, scale: 1.18, halo: 3.2, haloOpacity: 0.26 },
+      Pluto:   { color: 0xbfa890, opacity: 0.14, scale: 1.10, halo: 2.4, haloOpacity: 0.10 },
     };
 
     const createPlanetSystem = (planetName) => {
@@ -212,7 +217,7 @@ export default function SolarSystemView() {
         
       }
       
-      // Add atmosphere glow for planets with atmospheres
+      // Add Fresnel rim atmosphere + soft outer halo for planets with one
       const atmosConfig = ATMOSPHERE_CONFIG[planetName];
       if (atmosConfig) {
         const glowMesh = createAtmosphereGlow(data.radius, atmosConfig.color, {
@@ -220,6 +225,12 @@ export default function SolarSystemView() {
           opacity: atmosConfig.opacity,
         });
         group.add(glowMesh);
+
+        const halo = createPlanetHalo(data.radius, atmosConfig.color, {
+          scale: atmosConfig.halo,
+          opacity: atmosConfig.haloOpacity,
+        });
+        group.add(halo);
       }
 
       // Create inclined orbit ellipse and store reference

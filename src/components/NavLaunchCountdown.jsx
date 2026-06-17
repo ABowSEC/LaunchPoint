@@ -3,6 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, HStack, Text, Icon } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { FaRocket } from 'react-icons/fa';
+import { getUpcomingLaunches } from '../data/launchData';
 
 const pulseGlow = keyframes`
   0%, 100% { opacity: 1; }
@@ -45,27 +46,27 @@ export default function NavLaunchCountdown() {
   const timeLeft = useCountdown(nextLaunch?.window_start);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchNext = async () => {
-      try {
-        const res = await fetch('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1');
-        if (!res.ok) {
-          console.warn('NavLaunchCountdown: API returned', res.status);
-          return;
-        }
-        const data = await res.json();
-        if (data.results?.[0]) {
-          setNextLaunch(data.results[0]);
-        }
-      } catch (err) {
-        console.warn('NavLaunchCountdown: fetch failed', err);
-      } finally {
-        setLoading(false);
-      }
+      const results = await getUpcomingLaunches();
+      if (cancelled) return;
+      if (results[0]) setNextLaunch(results[0]);
+      setLoading(false);
     };
 
     fetchNext();
-    const id = setInterval(fetchNext, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    // Shared cache means this only hits the network once its TTL expires, so
+    // the nav and the Launches page no longer double up on requests. Skip
+    // refreshes while the tab is hidden.
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchNext();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   const name = nextLaunch?.name ?? null;

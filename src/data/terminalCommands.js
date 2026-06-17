@@ -1,3 +1,5 @@
+import { getUpcomingLaunches } from './launchData';
+
 // ── Terminal output line helpers ──────────────────────────────────────────────
 export const C = {
   green: '#4ade80',
@@ -89,11 +91,10 @@ export const COMMANDS = {
   },
 
   launches: async () => {
-    const d = await safeFetch(
-      'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=3'
-    );
+    // Reuse the shared, rate-limit-aware launch cache instead of a direct hit.
+    const results = (await getUpcomingLaunches()).slice(0, 3);
     const lines = [amb('UPCOMING LAUNCHES'), sep()];
-    d.results.forEach((l, i) => {
+    results.forEach((l, i) => {
       lines.push(gl(`[${i + 1}] ${l.name}`));
       lines.push(dim(`    DATE    ${new Date(l.window_start).toUTCString()}`));
       lines.push(dim(`    AGENCY  ${l.launch_service_provider?.name ?? 'Unknown'}`));

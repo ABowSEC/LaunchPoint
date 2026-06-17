@@ -29,6 +29,7 @@ import {
   ChevronUpIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube } from 'react-icons/fa';
+import { getUpcomingLaunches, isLaunchesRateLimited } from '../data/launchData';
 
 /**
  * Countdown Timer Component
@@ -344,27 +345,38 @@ function LaunchFeed() {
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
   useEffect(() => {
-    const fetchLaunches = async () => {
+    let cancelled = false;
+
+    const load = async () => {
       try {
-        setLoading(true);
         setError(null);
-        const response = await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/");
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        setLaunches(data.results.slice(0, 10));
+        const results = await getUpcomingLaunches();
+        if (!cancelled) {
+          setLaunches(results.slice(0, 10));
+          setRateLimited(results.length === 0 && isLaunchesRateLimited());
+        }
       } catch (err) {
-        console.error('Error fetching launches:', err);
-        setError(err.message);
+        if (!cancelled) setError(err.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchLaunches();
-    const interval = setInterval(fetchLaunches, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    load();
+    // Re-read on a timer; the shared cache only hits the network when its TTL
+    // has expired, so this stays well under the API rate limit. Skip while the
+    // tab is hidden to avoid pointless background refreshes.
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') load();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) {
@@ -384,6 +396,21 @@ function LaunchFeed() {
           <AlertTitle>Error loading launches!</AlertTitle>
           <AlertDescription>
             {error}. Please try refreshing the page.
+          </AlertDescription>
+        </Box>
+      </Alert>
+    );
+  }
+
+  if (launches.length === 0 && rateLimited) {
+    return (
+      <Alert status="warning" borderRadius="lg">
+        <AlertIcon />
+        <Box>
+          <AlertTitle>Launch data temporarily rate-limited</AlertTitle>
+          <AlertDescription>
+            The launch provider is throttling requests right now. This will
+            refresh automatically in a few minutes, no need to reload.
           </AlertDescription>
         </Box>
       </Alert>

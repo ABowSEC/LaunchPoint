@@ -68,12 +68,22 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
-        const today = new Date().toISOString().slice(0, 10);
+        // Local calendar date (en-CA gives YYYY-MM-DD). APOD publishes on US
+        // Eastern time, so using UTC here can roll the date forward a day early
+        // and cache yesterday's image under today's key.
+        const today = new Date().toLocaleDateString('en-CA');
         const cacheKey = `apod_${today}`;
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
-          setApod(JSON.parse(cached));
-          return;
+          const parsed = JSON.parse(cached);
+          // Only trust the cache if it actually holds today's image. NASA can
+          // lag (it publishes at midnight ET), so an entry written early may
+          // hold yesterday's image under today's key; refetch in that case.
+          if (parsed?.date === today) {
+            setApod(parsed);
+            return;
+          }
+          localStorage.removeItem(cacheKey);
         }
 
         const apiKey = import.meta.env.VITE_NASA_API_KEY;
@@ -99,11 +109,13 @@ export default function Home() {
         }
 
         const data = await res.json();
+        // Key by the image's real date so a lagging day can't poison the slot.
+        const storeKey = `apod_${data.date ?? today}`;
         // Evict any stale APOD entries before writing the new one
         Object.keys(localStorage)
-          .filter(k => k.startsWith('apod_') && k !== cacheKey)
+          .filter(k => k.startsWith('apod_') && k !== storeKey)
           .forEach(k => localStorage.removeItem(k));
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(storeKey, JSON.stringify(data));
         setApod(data);
       } catch (err) {
         console.error('APOD fetch error:', err);
@@ -264,7 +276,9 @@ export default function Home() {
             {apod.date && (
               <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
                 <CalendarIcon mr={2} />
-                {new Date(apod.date).toLocaleDateString("en-US")}
+                {/* apod.date is a plain calendar date; format in UTC so it
+                    isn't shifted back a day in timezones behind UTC. */}
+                {new Date(apod.date).toLocaleDateString("en-US", { timeZone: "UTC" })}
               </Badge>
             )}
             {apod.copyright && apod.copyright.trim() !== "" ? (

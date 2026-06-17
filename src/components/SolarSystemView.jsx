@@ -16,8 +16,14 @@ export default function SolarSystemView() {
   const mountRef = useRef(null);
   const [focusedPlanet, setFocusedPlanet] = useState(null);
   const focusedPlanetRef = useSyncedRef(focusedPlanet);
-  const desiredRadiusRef = useRef(80); // Default camera distance 
-  const [simulationSpeed, setSimulationSpeed] = useState(1); // Earth days per second
+  const desiredRadiusRef = useRef(80); // Default camera distance
+  // Honor prefers-reduced-motion: start paused so the scene does not animate on
+  // its own. The speed controls below let the user start it manually.
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [simulationSpeed, setSimulationSpeed] = useState(prefersReducedMotion ? 0 : 1); // Earth days per second
   const speedRef = useSyncedRef(simulationSpeed);
   const [showOrbitLines, setShowOrbitLines] = useState(true); // New state for orbit lines visibility
   const orbitLinesRef = useRef([]); // Ref to store orbit line references
@@ -629,9 +635,10 @@ export default function SolarSystemView() {
           <Box flex={1} maxW="160px">
             <input
               type="range"
-              min="0.1"
+              min="0"
               max="100"
               step="0.1"
+              aria-label="Simulation speed"
               value={simulationSpeed}
               onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
               style={{

@@ -15,15 +15,17 @@ import {
   Text,
   useToast,
 } from '@chakra-ui/react';
-import { Suspense, useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
-import Home from './pages/Home';
-import LaunchPage from './pages/LaunchPage';
-import MarsPage from './pages/MarsPage';
-import ExplorePage from './pages/ExplorePage';
-import SolarSimPage from './pages/SolarSimPage';
-import ISSLivePage from './pages/issLive';
+// Route pages are code-split so heavy dependencies (Three.js on /solarsim,
+// Leaflet on /iss) stay out of the initial bundle and load on demand.
+const Home = lazy(() => import('./pages/Home'));
+const LaunchPage = lazy(() => import('./pages/LaunchPage'));
+const MarsPage = lazy(() => import('./pages/MarsPage'));
+const ExplorePage = lazy(() => import('./pages/ExplorePage'));
+const SolarSimPage = lazy(() => import('./pages/SolarSimPage'));
+const ISSLivePage = lazy(() => import('./pages/issLive'));
 import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
 import WarpTransition from './components/WarpTransition';

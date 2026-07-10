@@ -4,7 +4,7 @@ import {
   Flex, IconButton, Input, Text, useDisclosure,
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
-import { BOOT_LINES, COMMANDS, C, dim, err, gl } from '../data/terminalCommands';
+import { BOOT_LINES, COMMANDS, C, dim, err } from '../data/terminalCommands';
 
 const PROMPT = 'HALP://$ ';
 const MAX_INPUT = 120;

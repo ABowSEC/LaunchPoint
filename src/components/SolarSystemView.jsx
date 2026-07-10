@@ -4,7 +4,7 @@ import { ExternalLinkIcon, CloseIcon } from "@chakra-ui/icons";
 import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from "three";
 import Planet from "./Planet";
-import { createRingTexture, createOrbitEllipse, createAtmosphereGlow } from '../utils/threeHelpers';
+import { createRingTexture, createOrbitEllipse, createAtmosphereGlow, createPlanetHalo } from '../utils/threeHelpers';
 import { useAnimationFrame } from '../hooks/useAnimationFrame';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { useSyncedRef } from '../hooks/useSyncedRef';
@@ -16,8 +16,14 @@ export default function SolarSystemView() {
   const mountRef = useRef(null);
   const [focusedPlanet, setFocusedPlanet] = useState(null);
   const focusedPlanetRef = useSyncedRef(focusedPlanet);
-  const desiredRadiusRef = useRef(80); // Default camera distance 
-  const [simulationSpeed, setSimulationSpeed] = useState(1); // Earth days per second
+  const desiredRadiusRef = useRef(80); // Default camera distance
+  // Honor prefers-reduced-motion: start paused so the scene does not animate on
+  // its own. The speed controls below let the user start it manually.
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [simulationSpeed, setSimulationSpeed] = useState(prefersReducedMotion ? 0 : 1); // Earth days per second
   const speedRef = useSyncedRef(simulationSpeed);
   const [showOrbitLines, setShowOrbitLines] = useState(true); // New state for orbit lines visibility
   const orbitLinesRef = useRef([]); // Ref to store orbit line references
@@ -30,7 +36,6 @@ export default function SolarSystemView() {
   const sunMeshRef = useRef();
   const planetObjectsRef = useRef();
   const planetNamesRef   = useRef([]);
-  const startTimeRef = useRef(Date.now());
 
 
 
@@ -87,8 +92,11 @@ export default function SolarSystemView() {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
+    // Capture the mount node so the cleanup closure doesn't read a ref that
+    // may have changed by the time it runs.
+    const mountNode = mountRef.current;
+    const width = mountNode.clientWidth;
+    const height = mountNode.clientHeight;
 
     // Create complete solar system scene using utility
     const { scene, camera, renderer, sun: sunMesh } = createSolarSystemScene(width, height, {
@@ -121,13 +129,18 @@ export default function SolarSystemView() {
     const orbitLines = []; // Array to store orbit line references
     orbitLinesRef.current = orbitLines; // Store reference for external access
 
+    // Per-planet glow: `color/opacity/scale/power` drive the Fresnel rim
+    // atmosphere; `halo`/`haloOpacity` drive the soft outer sprite bloom.
     const ATMOSPHERE_CONFIG = {
-      Earth:   { color: 0x4488ff, opacity: 0.38, scale: 1.20 },
-      Venus:   { color: 0xffcc66, opacity: 0.42, scale: 1.22 },
-      Jupiter: { color: 0xffaa44, opacity: 0.28, scale: 1.15 },
-      Neptune: { color: 0x3366ff, opacity: 0.32, scale: 1.18 },
-      Uranus:  { color: 0x88ddff, opacity: 0.28, scale: 1.16 },
-      Mars:    { color: 0xff4422, opacity: 0.25, scale: 1.16 },
+      Mercury: { color: 0x9c8b7a, opacity: 0.12, scale: 1.10, halo: 2.4, haloOpacity: 0.10 },
+      Venus:   { color: 0xffcc66, opacity: 0.42, scale: 1.22, halo: 3.2, haloOpacity: 0.32 },
+      Earth:   { color: 0x4488ff, opacity: 0.38, scale: 1.20, halo: 3.0, haloOpacity: 0.28 },
+      Mars:    { color: 0xff4422, opacity: 0.25, scale: 1.16, halo: 2.8, haloOpacity: 0.18 },
+      Jupiter: { color: 0xffaa44, opacity: 0.22, scale: 1.15, halo: 3.0, haloOpacity: 0.14 },
+      Saturn:  { color: 0xf0d090, opacity: 0.24, scale: 1.14, halo: 2.6, haloOpacity: 0.16 },
+      Uranus:  { color: 0x88ddff, opacity: 0.28, scale: 1.16, halo: 3.0, haloOpacity: 0.22 },
+      Neptune: { color: 0x3366ff, opacity: 0.32, scale: 1.18, halo: 3.2, haloOpacity: 0.26 },
+      Pluto:   { color: 0xbfa890, opacity: 0.14, scale: 1.10, halo: 2.4, haloOpacity: 0.10 },
     };
 
     const createPlanetSystem = (planetName) => {
@@ -143,45 +156,48 @@ export default function SolarSystemView() {
         let ringGeometry, ringMaterial;
         
         switch (data.ringType) {
-          case 'saturn':
+          case 'saturn': {
             // Saturn's prominent golden rings with Cassini Division
             ringGeometry = new THREE.RingGeometry(data.radius * 1.8, data.radius * 3.0, 64);
             const saturnRingTexture = createRingTexture('saturn', data.radius * 1.8, data.radius * 3.0);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: saturnRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.9,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
-          case 'uranus':
+          }
+
+          case 'uranus': {
             //  dark, subtle rings
             ringGeometry = new THREE.RingGeometry(data.radius * 1.5, data.radius * 2.2, 32);
             const uranusRingTexture = createRingTexture('uranus', data.radius * 1.5, data.radius * 2.2);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: uranusRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.7,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
-          case 'neptune':
+          }
+
+          case 'neptune': {
             // Neptune's faint, clumpy rings
             ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 24);
             const neptuneRingTexture = createRingTexture('neptune', data.radius * 1.4, data.radius * 2.0);
-            ringMaterial = new THREE.MeshStandardMaterial({ 
+            ringMaterial = new THREE.MeshStandardMaterial({
               map: neptuneRingTexture,
-              transparent: true, 
+              transparent: true,
               opacity: 0.6,
               side: THREE.DoubleSide,
               depthWrite: false
             });
             break;
-            
+          }
+
           default:
             // Default ring style
             ringGeometry = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.0, 48);
@@ -207,7 +223,7 @@ export default function SolarSystemView() {
         
       }
       
-      // Add atmosphere glow for planets with atmospheres
+      // Add Fresnel rim atmosphere + soft outer halo for planets with one
       const atmosConfig = ATMOSPHERE_CONFIG[planetName];
       if (atmosConfig) {
         const glowMesh = createAtmosphereGlow(data.radius, atmosConfig.color, {
@@ -215,6 +231,12 @@ export default function SolarSystemView() {
           opacity: atmosConfig.opacity,
         });
         group.add(glowMesh);
+
+        const halo = createPlanetHalo(data.radius, atmosConfig.color, {
+          scale: atmosConfig.halo,
+          opacity: atmosConfig.haloOpacity,
+        });
+        group.add(halo);
       }
 
       // Create inclined orbit ellipse and store reference
@@ -270,36 +292,66 @@ export default function SolarSystemView() {
     createAsteroidBelt();
 
     // Setup resize handler
-    const cleanupResize = setupResizeHandler(camera, renderer, mountRef.current);
+    const cleanupResize = setupResizeHandler(camera, renderer, mountNode);
+
+    // Planet map textures are cached/shared across mounts (see Planet.jsx),
+    // so they must survive this component's teardown — preserve them.
+    const preservedTextures = new Set();
+    Object.values(planetObjects).forEach(({ mesh }) => {
+      if (mesh.material?.map) preservedTextures.add(mesh.material.map);
+    });
 
     return () => {
-      if (renderer.domElement && mountRef.current?.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-      controls.dispose();
       cleanupResize();
+      controls.dispose();
+
+      // Release every GPU resource created for this scene: geometries,
+      // materials, and any non-shared textures. Without this, each warp-in
+      // leaks the full solar system worth of buffers and textures.
+      scene.traverse((obj) => {
+        obj.geometry?.dispose();
+        const materials = obj.material
+          ? (Array.isArray(obj.material) ? obj.material : [obj.material])
+          : [];
+        materials.forEach((material) => {
+          Object.values(material).forEach((value) => {
+            if (value?.isTexture && !preservedTextures.has(value)) value.dispose();
+          });
+          material.dispose();
+        });
+      });
+
+      if (renderer.domElement && mountNode?.contains(renderer.domElement)) {
+        mountNode.removeChild(renderer.domElement);
+      }
       renderer.dispose();
+      renderer.forceContextLoss(); // free the WebGL context so repeated
+                                   // mounts don't exhaust the browser's limit
     };
   }, []); // Only run once on mount
 
   // Animation callback using the custom hook
-  const animate = useCallback((deltaTime, time) => {
+  const animate = useCallback((deltaTime) => {
     if (!sunMeshRef.current || !planetObjectsRef.current || !controlsRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) {
       return;
     }
 
-    const elapsedTime = (time - startTimeRef.current) * 0.001; // Convert to seconds
-    
+    // Seconds elapsed this frame, clamped so a backgrounded tab doesn't
+    // produce one enormous step when it resumes.
+    const dt = Math.min(deltaTime, 100) * 0.001;
+
     sunMeshRef.current.rotation.y += 0.002;
 
     planetNamesRef.current.forEach(name => {
       const planet = planetObjectsRef.current[name];
-      // Calculate orbital position based on time, period, and speed
-      const t = ((elapsedTime * speedRef.current) / (planet.period * 0.1)) + planet.startTime; // Scale period for visual speed
+      // Integrate orbital phase incrementally: changing speed only affects
+      // motion from here on, so planets never jump to a recomputed position.
+      planet.angle += (dt * speedRef.current) / (planet.period * 0.1);
+      const t = planet.angle + planet.startTime;
       const x = Math.cos(t) * planet.a;
       const z = Math.sin(t) * planet.b;
       const y = Math.sin(planet.inclination * Math.PI / 180) * z;
-      
+
       // Move the entire group (planet + rings) to the orbital position
       planet.group.position.set(x, y, z);
       planet.mesh.rotation.y += 0.02;
@@ -583,9 +635,10 @@ export default function SolarSystemView() {
           <Box flex={1} maxW="160px">
             <input
               type="range"
-              min="0.1"
+              min="0"
               max="100"
               step="0.1"
+              aria-label="Simulation speed"
               value={simulationSpeed}
               onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
               style={{

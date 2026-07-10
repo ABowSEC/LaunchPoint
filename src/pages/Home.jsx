@@ -68,7 +68,10 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
-        const today = new Date().toISOString().slice(0, 10);
+        // Local calendar date (en-CA gives YYYY-MM-DD). APOD publishes on US
+        // Eastern time, so using UTC here can roll the date forward a day early
+        // and cache yesterday's image under today's key.
+        const today = new Date().toLocaleDateString('en-CA');
         const cacheKey = `apod_${today}`;
         // A corrupt cache entry should fall through to a refetch, not error out
         try {
@@ -278,7 +281,9 @@ export default function Home() {
             {apod.date && (
               <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
                 <CalendarIcon mr={2} />
-                {new Date(apod.date).toLocaleDateString("en-US")}
+                {/* apod.date is a plain calendar date; format in UTC so it
+                    isn't shifted back a day in timezones behind UTC. */}
+                {new Date(apod.date).toLocaleDateString("en-US", { timeZone: "UTC" })}
               </Badge>
             )}
             {apod.copyright && apod.copyright.trim() !== "" ? (

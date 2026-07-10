@@ -41,9 +41,31 @@ function RecenterMap({ lat, lng }) {
   return null;
 }
 
+// Split the ground track into separate segments wherever the path crosses the
+// antimeridian. Without this, Leaflet draws a single straight line across the whole map connecting +180° back to -180°.
+// without random straight line appears on x axis
+function splitAtAntimeridian(positions) {
+  const segments = [];
+  let current = [];
+  for (let i = 0; i < positions.length; i++) {
+    if (i > 0) {
+      const prevLng = positions[i - 1][1];
+      const lng = positions[i][1];
+      if (Math.abs(lng - prevLng) > 180) {
+        segments.push(current);
+        current = [];
+      }
+    }
+    current.push(positions[i]);
+  }
+  if (current.length) segments.push(current);
+  return segments.filter(seg => seg.length > 1);
+}
+
 // ── Live map component ────────────────────────────────────────────────────────
 function ISSMap({ lat, lng, positions }) {
   if (lat === null || lng === null) return null;
+  const trackSegments = splitAtAntimeridian(positions);
   return (
     <Box
       borderRadius="xl"
@@ -63,9 +85,9 @@ function ISSMap({ lat, lng, positions }) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {positions.length > 1 && (
-          <Polyline positions={positions} color="#63B3ED" weight={2} opacity={0.7} />
-        )}
+        {trackSegments.map((segment, i) => (
+          <Polyline key={i} positions={segment} color="#63B3ED" weight={2} opacity={0.7} />
+        ))}
         <Marker position={[lat, lng]} icon={issIcon} />
         <RecenterMap lat={lat} lng={lng} />
       </MapContainer>

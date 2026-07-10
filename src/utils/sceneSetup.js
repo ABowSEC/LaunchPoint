@@ -174,35 +174,50 @@ export function createSun(radius = 4, texturePath = "/textures/sun.jpg", options
   const group = new THREE.Group();
   group.add(sunMesh);
 
-  // Inner corona — tight warm glow
-  const innerCoronaGeo = new THREE.SphereGeometry(radius * 1.12, 32, 32);
-  const innerCoronaMat = new THREE.MeshBasicMaterial({
-    color: 0xff8800,
-    transparent: true,
-    opacity: 0.40,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
-  const innerCorona = new THREE.Mesh(innerCoronaGeo, innerCoronaMat);
-  innerCorona.renderOrder = 1;
-  group.add(innerCorona);
+  // Corona as a camera-facing additive sprite with a soft radial falloff.
+  // A billboard glow avoids the hard-edged banding of stacked solid shells
+  // and stays bright at the core, fading smoothly to transparent.
+  const glowTexture = createSunGlowTexture();
+  const addGlowSprite = (scale, color, opacity, renderOrder) => {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture,
+      color,
+      transparent: true,
+      opacity,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }));
+    sprite.scale.setScalar(radius * scale);
+    sprite.renderOrder = renderOrder;
+    group.add(sprite);
+  };
 
-  // Outer corona — wide pale halo
-  const outerCoronaGeo = new THREE.SphereGeometry(radius * 1.45, 32, 32);
-  const outerCoronaMat = new THREE.MeshBasicMaterial({
-    color: 0xffdd88,
-    transparent: true,
-    opacity: 0.18,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
-  const outerCorona = new THREE.Mesh(outerCoronaGeo, outerCoronaMat);
-  outerCorona.renderOrder = 2;
-  group.add(outerCorona);
+  addGlowSprite(7, 0xffcc66, 0.9, 1);  // warm inner bloom
+  addGlowSprite(14, 0xff8844, 0.5, 2); // wide pale halo
 
   return group;
+}
+
+/**
+ * Builds a radial-gradient texture (bright centre → transparent edge) used
+ * for additive sprite glows like the sun's corona.
+ * @returns {THREE.CanvasTexture}
+ */
+function createSunGlowTexture() {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const c = size / 2;
+  const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+  gradient.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  gradient.addColorStop(0.15, 'rgba(255, 240, 190, 0.9)');
+  gradient.addColorStop(0.35, 'rgba(255, 170, 80, 0.35)');
+  gradient.addColorStop(0.7, 'rgba(255, 120, 40, 0.08)');
+  gradient.addColorStop(1.0, 'rgba(255, 100, 0, 0.0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(canvas);
 }
 
 /**

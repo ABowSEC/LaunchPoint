@@ -11,19 +11,16 @@ import {
   StatNumber,
   StatHelpText,
   Spinner,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Button,
   Divider,
   VStack,
   HStack,
   Badge
 } from "@chakra-ui/react";
-import { RepeatIcon, TimeIcon } from "@chakra-ui/icons";
+import { TimeIcon } from "@chakra-ui/icons";
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
+import { fetchJson } from "../utils/fetchJson";
+import ErrorState from "../components/ErrorState";
 
 // ── ISS marker icon ───────────────────────────────────────────────────────────
 const issIcon = L.divIcon({
@@ -124,26 +121,13 @@ export default function ISSLivePage() {
   const [retryCount, setRetryCount] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Polls every 5 s and keeps showing stale telemetry through failures, so
+  // this page owns its loop instead of using useApi (which is load-once).
   const fetchISS = async () => {
     try {
       setError(null);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544", {
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        if (res.status === 429) throw new Error("Rate limit exceeded. Please try again shortly.");
-        else if (res.status >= 500) throw new Error("ISS API temporarily unavailable.");
-        else throw new Error(`API Error: ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await fetchJson("https://api.wheretheiss.at/v1/satellites/25544");
       setIssData(data);
       setLastUpdated(new Date());
       setRetryCount(0);
@@ -156,13 +140,7 @@ export default function ISSLivePage() {
       });
     } catch (err) {
       console.error("Failed to fetch ISS data", err);
-
-      let msg = "Failed to fetch ISS data.";
-      if (err.name === "AbortError") msg = "Request timed out. ISS API may be experiencing issues.";
-      else if (err.message.includes("Failed to fetch")) msg = "Network error. Check your connection.";
-      else msg = err.message;
-
-      setError(msg);
+      setError(err.message || "Failed to fetch ISS data.");
       setLoading(false);
       setRetryCount(prev => prev + 1);
     }
@@ -225,27 +203,14 @@ export default function ISSLivePage() {
           </HStack>
 
           {error && (
-            <Alert status="warning" mb={4} borderRadius="md">
-              <AlertIcon />
-              <Box flex="1">
-                <AlertTitle>API Issue</AlertTitle>
-                <AlertDescription>
-                  {error}
-                  {retryCount > 0 && ` (Attempt ${retryCount})`}
-                </AlertDescription>
-              </Box>
-              <Button
-                leftIcon={<RepeatIcon />}
-                size="sm"
-                onClick={fetchISS}
-                colorScheme="blue"
-                variant="outline"
-                isLoading={loading}
-                ml={3}
-              >
-                Retry
-              </Button>
-            </Alert>
+            <ErrorState
+              status="warning"
+              mb={4}
+              title="API Issue"
+              message={`${error}${retryCount > 0 ? ` (Attempt ${retryCount})` : ''}`}
+              onRetry={fetchISS}
+              isRetrying={loading}
+            />
           )}
 
           {loading && !issData ? (

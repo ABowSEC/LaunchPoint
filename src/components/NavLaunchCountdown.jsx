@@ -3,6 +3,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Box, HStack, Text, Icon } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { FaRocket } from 'react-icons/fa';
+import { fetchJson } from '../utils/fetchJson';
+import { useApi } from '../hooks/useApi';
 
 const pulseGlow = keyframes`
   0%, 100% { opacity: 1; }
@@ -40,33 +42,18 @@ function formatCountdown({ d, h, m, s }) {
 }
 
 export default function NavLaunchCountdown() {
-  const [nextLaunch, setNextLaunch] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Errors are deliberately not rendered: the badge is decorative, so on
+  // failure we keep showing the last good launch or hide entirely.
+  const { data, loading, refetch } = useApi((signal) =>
+    fetchJson('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1', { signal })
+  );
+  const nextLaunch = data?.results?.[0] ?? null;
   const timeLeft = useCountdown(nextLaunch?.window_start);
 
   useEffect(() => {
-    const fetchNext = async () => {
-      try {
-        const res = await fetch('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1');
-        if (!res.ok) {
-          console.warn('NavLaunchCountdown: API returned', res.status);
-          return;
-        }
-        const data = await res.json();
-        if (data.results?.[0]) {
-          setNextLaunch(data.results[0]);
-        }
-      } catch (err) {
-        console.warn('NavLaunchCountdown: fetch failed', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNext();
-    const id = setInterval(fetchNext, 5 * 60 * 1000);
+    const id = setInterval(() => refetch({ background: true }), 5 * 60 * 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [refetch]);
 
   const name = nextLaunch?.name ?? null;
 

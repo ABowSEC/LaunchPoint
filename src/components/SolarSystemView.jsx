@@ -12,6 +12,9 @@ import { planetOrbitData, planetData } from '../utils/planetData';
 import { createSolarSystemScene, setupResizeHandler } from '../utils/sceneSetup';
 import { OrbitControls } from '../utils/OrbitControls';
 
+// Named alias: ESLint's no-unused-vars can't see `motion` used as <motion.div>
+const MotionDiv = motion.div;
+
 export default function SolarSystemView() {
   const mountRef = useRef(null);
   const [focusedPlanet, setFocusedPlanet] = useState(null);
@@ -370,7 +373,7 @@ export default function SolarSystemView() {
 
     controlsRef.current.update();
     rendererRef.current.render(sceneRef.current, cameraRef.current);
-  }, []);
+  }, [focusedPlanetRef, speedRef]); // Both are stable refs; listed to satisfy exhaustive-deps
 
   // Use the animation frame hook
   useAnimationFrame(animate);
@@ -435,7 +438,7 @@ export default function SolarSystemView() {
       {/* ── Planet info card (slide in when focused) ─────── */}
       <AnimatePresence>
         {focusedPlanet && planetData[focusedPlanet]?.facts && (
-          <motion.div
+          <MotionDiv
             key={focusedPlanet}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -502,7 +505,7 @@ export default function SolarSystemView() {
                 {planetData[focusedPlanet].facts.description}
               </Text>
             </Box>
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
 

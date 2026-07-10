@@ -28,7 +28,6 @@ Thumbs.db
 # Coverage/test/output folders
 coverage/
 test-output/
-*.log
 
 # Image cache or user-uploaded temp data
 public/uploads/

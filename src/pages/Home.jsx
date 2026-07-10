@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -23,6 +23,7 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
+  useImage,
   usePrefersReducedMotion
 } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
@@ -33,6 +34,9 @@ import {
   DownloadIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
+import { fetchJson } from "../utils/fetchJson";
+import { useApi } from "../hooks/useApi";
+import ErrorState from "../components/ErrorState";
 
 // Content-arrival reveal: APOD data lands a beat after the page; a short
 // fade-and-rise acknowledges it without page-load choreography.
@@ -41,18 +45,56 @@ const fadeUp = keyframes`
   to   { opacity: 1; transform: translateY(0); }
 `;
 
-export default function Home() {
-  const [apod, setApod] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showFullDescription, setShowFullDescription] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
+async function fetchApod(signal) {
+  // Local calendar date (en-CA gives YYYY-MM-DD). APOD publishes on US
+  // Eastern time, so using UTC here can roll the date forward a day early
+  // and cache yesterday's image under today's key.
+  const today = new Date().toLocaleDateString('en-CA');
+  const cacheKey = `apod_${today}`;
 
-  useEffect(() => {
-    setImgLoaded(false);
-    setImgError(false);
-  }, [apod?.url]);
+  // A corrupt or wrong-day cache entry should fall through to a refetch,
+  // not error out. NASA can still be serving yesterday's APOD early in the
+  // morning, so an entry under today's key must also carry today's date.
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed?.date === today) return parsed;
+      localStorage.removeItem(cacheKey);
+    }
+  } catch {
+    localStorage.removeItem(cacheKey);
+  }
+
+  const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
+  if (apiKey === 'DEMO_KEY') {
+    console.warn('Using DEMO_KEY - limited to 30 requests per hour');
+  }
+
+  const data = await fetchJson(
+    `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`,
+    { signal }
+  );
+
+  // Cache failures (quota, private browsing) must not fail the fetch.
+  // Key the entry by the APOD's own date: if NASA returned yesterday's
+  // picture, caching it under today's key would pin it for the whole day.
+  const storeKey = `apod_${data.date ?? today}`;
+  try {
+    // Evict any stale APOD entries before writing the new one
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('apod_') && k !== storeKey)
+      .forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(storeKey, JSON.stringify(data));
+  } catch {
+    // Ignore: worst case we refetch on the next visit
+  }
+  return data;
+}
+
+export default function Home() {
+  const { data: apod, loading, error, refetch } = useApi(fetchApod);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -62,78 +104,18 @@ export default function Home() {
     ? undefined
     : `${fadeUp} 0.45s cubic-bezier(0.16, 1, 0.3, 1) both`;
 
-  useEffect(() => {
-    const fetchAPOD = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Local calendar date (en-CA gives YYYY-MM-DD). APOD publishes on US
-        // Eastern time, so using UTC here can roll the date forward a day early
-        // and cache yesterday's image under today's key.
-        const today = new Date().toLocaleDateString('en-CA');
-        const cacheKey = `apod_${today}`;
-        // A corrupt cache entry should fall through to a refetch, not error out
-        try {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            setApod(JSON.parse(cached));
-            return;
-          }
-        } catch {
-          localStorage.removeItem(cacheKey);
-        }
-
-        const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
-
-        if (apiKey === 'DEMO_KEY') {
-          console.warn('Using DEMO_KEY - limited to 30 requests per hour');
-        }
-
-        const res = await fetch(
-          `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
-        );
-
-        if (!res.ok) {
-          if (res.status === 429) {
-            throw new Error("NASA API rate limit exceeded. Please try again later.");
-          } else if (res.status === 403) {
-            throw new Error("Invalid API key. Please check your NASA API key configuration.");
-          } else if (res.status >= 500) {
-            throw new Error("NASA API service temporarily unavailable.");
-          } else {
-            throw new Error(`Failed to fetch APOD: ${res.status}`);
-          }
-        }
-
-        const data = await res.json();
-        // Cache failures (quota, private browsing) must not fail the fetch
-        try {
-          // Evict any stale APOD entries before writing the new one
-          Object.keys(localStorage)
-            .filter(k => k.startsWith('apod_') && k !== cacheKey)
-            .forEach(k => localStorage.removeItem(k));
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-        } catch {
-          // Ignore: worst case we refetch on the next visit
-        }
-        setApod(data);
-      } catch (err) {
-        console.error('APOD fetch error:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAPOD();
-  }, []);
-
   const toggleDescription = () => setShowFullDescription((prev) => !prev);
 
   // apod.url points at a video embed (e.g. YouTube) when media_type is video,
   // so the modal must not treat it as an image source or download target.
   const isVideoApod = apod?.media_type === "video";
+
+  // Track image readiness with a detached probe (Chakra's useImage) instead
+  // of onLoad on the rendered img: the load event on a display:none element
+  // proved unreliable on the first data commit, leaving the skeleton stuck.
+  const imgStatus = useImage({ src: !isVideoApod ? apod?.url : undefined });
+  const imgLoaded = imgStatus === "loaded";
+  const imgError = imgStatus === "failed";
 
   const renderAPODContent = () => {
     if (loading) {
@@ -147,13 +129,13 @@ export default function Home() {
   
     if (error) {
       return (
-        <Box maxW="lg" mx="auto" p={6} borderRadius="lg" bg="bg.card" border="1px solid" borderColor="red.800">
-          <Heading as="h2" size="md" color="red.400" mb={2}>Error</Heading>
-          <Text color="text.secondary">{error}</Text>
-          <Button mt={4} onClick={() => window.location.reload()} colorScheme="brand" leftIcon={<ArrowForwardIcon />}>
-            Try Again
-          </Button>
-        </Box>
+        <ErrorState
+          maxW="lg"
+          mx="auto"
+          title="Couldn't load today's picture"
+          message={error}
+          onRetry={() => refetch()}
+        />
       );
     }
   
@@ -201,7 +183,7 @@ export default function Home() {
           ) : isImage ? (
             <>
               {!imgLoaded && !imgError && (
-                <Skeleton rounded="md" height="500px" />
+                <Skeleton rounded="md" height="500px" width="min(80vw, 640px)" />
               )}
               {imgError ? (
                 <Image
@@ -220,8 +202,6 @@ export default function Home() {
                   objectFit="cover"
                   cursor="pointer"
                   display={imgLoaded ? "block" : "none"}
-                  onLoad={() => setImgLoaded(true)}
-                  onError={() => setImgError(true)}
                   onClick={onOpen}
                   transition="transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
                   _hover={

@@ -32,6 +32,9 @@ import WarpTransition from './components/WarpTransition';
 import NavLaunchCountdown from './components/NavLaunchCountdown';
 import { useKonamiCode } from './hooks/useKonamiCode';
 
+// Named alias: ESLint's no-unused-vars can't see `motion` used as <motion.div>
+const MotionDiv = motion.div;
+
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
   enter:   { opacity: 1, y: 0  },
@@ -155,7 +158,7 @@ function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <MotionDiv
         key={location.pathname}
         variants={pageVariants}
         initial="initial"
@@ -184,7 +187,7 @@ function AnimatedRoutes() {
             />
           </Routes>
         </Suspense>
-      </motion.div>
+      </MotionDiv>
     </AnimatePresence>
   );
 }

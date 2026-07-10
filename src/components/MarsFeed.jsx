@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Image,
@@ -6,7 +6,6 @@ import {
   SimpleGrid,
   Spinner,
   Button,
-  HStack,
   Alert,
   AlertIcon,
   AlertTitle,
@@ -21,44 +20,28 @@ import {
   Flex,
   Badge,
 } from "@chakra-ui/react";
+import { fetchJson } from "../utils/fetchJson";
+import { useApi } from "../hooks/useApi";
+import ErrorState from "./ErrorState";
 
 const PAGE_SIZE = 24;
 
 export default function MarsFeed({ rover, page, onPageChange }) {
-  const [photos, setPhotos] = useState([]);
-  const [totalHits, setTotalHits] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  useEffect(() => {
-    // Abort the in-flight request when rover/page changes so a slow, stale
-    // response can never overwrite a newer one
-    const controller = new AbortController();
-
-    const fetchPhotos = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const query = encodeURIComponent(`mars ${rover} rover`);
-        const url = `https://images-api.nasa.gov/search?q=${query}&media_type=image&page_size=${PAGE_SIZE}&page=${page}`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-        const data = await res.json();
-        setPhotos(data.collection.items || []);
-        setTotalHits(data.collection.metadata?.total_hits || 0);
-        setLoading(false);
-      } catch (err) {
-        if (err.name === "AbortError") return;
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchPhotos();
-    return () => controller.abort();
+  // useApi aborts the in-flight request when rover/page changes, so a slow,
+  // stale response can never overwrite a newer one
+  const { data, loading, error, refetch } = useApi((signal) => {
+    const query = encodeURIComponent(`mars ${rover} rover`);
+    return fetchJson(
+      `https://images-api.nasa.gov/search?q=${query}&media_type=image&page_size=${PAGE_SIZE}&page=${page}`,
+      { signal }
+    );
   }, [rover, page]);
+
+  const photos = data?.collection?.items ?? [];
+  const totalHits = data?.collection?.metadata?.total_hits ?? 0;
 
   const handleOpen = (photo) => {
     setSelected(photo);
@@ -77,11 +60,11 @@ export default function MarsFeed({ rover, page, onPageChange }) {
 
   if (error) {
     return (
-      <Alert status="error" borderRadius="md">
-        <AlertIcon />
-        <AlertTitle>Failed to load photos</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <ErrorState
+        title="Failed to load photos"
+        message={error}
+        onRetry={refetch}
+      />
     );
   }
 

@@ -29,6 +29,9 @@ import {
   ChevronUpIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube } from 'react-icons/fa';
+import { fetchJson } from '../utils/fetchJson';
+import { useApi } from '../hooks/useApi';
+import ErrorState from './ErrorState';
 
 /**
  * Countdown Timer Component
@@ -44,25 +47,31 @@ function CountdownTimer({ launchTime }) {
   const [isLaunched, setIsLaunched] = useState(false);
 
   useEffect(() => {
+    // Returns false once launched so the caller can stop ticking
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
       const launchDate = new Date(launchTime).getTime();
       const difference = launchDate - now;
 
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        setTimeLeft({ days, hours, minutes, seconds });
-      } else {
+      if (difference <= 0) {
         setIsLaunched(true);
+        return false;
       }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+      return true;
     };
 
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
+    if (!calculateTimeLeft()) return;
+
+    const timer = setInterval(() => {
+      if (!calculateTimeLeft()) clearInterval(timer);
+    }, 1000);
 
     return () => clearInterval(timer);
   }, [launchTime]);
@@ -341,31 +350,16 @@ function LaunchCard({ launch }) {
  * Main LaunchFeed Component
  */
 function LaunchFeed() {
-  const [launches, setLaunches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data, loading, error, refetch } = useApi((signal) =>
+    fetchJson("https://ll.thespacedevs.com/2.2.0/launch/upcoming/", { signal })
+  );
+  const launches = data?.results?.slice(0, 10) ?? [];
 
+  // Background refresh: update quietly without collapsing the grid to a spinner
   useEffect(() => {
-    const fetchLaunches = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/");
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        setLaunches(data.results.slice(0, 10));
-      } catch (err) {
-        console.error('Error fetching launches:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLaunches();
-    const interval = setInterval(fetchLaunches, 5 * 60 * 1000);
+    const interval = setInterval(() => refetch({ background: true }), 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -378,15 +372,11 @@ function LaunchFeed() {
 
   if (error) {
     return (
-      <Alert status="error" borderRadius="lg">
-        <AlertIcon />
-        <Box>
-          <AlertTitle>Error loading launches!</AlertTitle>
-          <AlertDescription>
-            {error}. Please try refreshing the page.
-          </AlertDescription>
-        </Box>
-      </Alert>
+      <ErrorState
+        title="Error loading launches!"
+        message={error}
+        onRetry={refetch}
+      />
     );
   }
 

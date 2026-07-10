@@ -1,3 +1,5 @@
+import { fetchJson } from '../utils/fetchJson';
+
 // ── Terminal output line helpers ──────────────────────────────────────────────
 export const C = {
   green: '#4ade80',
@@ -25,14 +27,9 @@ export const BOOT_LINES = [
   dim(''),
 ];
 
-// ── Safe fetch helper // throws on non-ok ──────────────────────────────────────
-async function safeFetch(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
-}
-
 // ── Command definitions ───────────────────────────────────────────────────────
+// Network calls go through the shared fetchJson helper so terminal errors
+// read as friendly messages instead of raw status codes.
 export const COMMANDS = {
   help: async () => [
     amb('COMMANDS'),
@@ -60,7 +57,7 @@ export const COMMANDS = {
   ],
 
   apod: async () => {
-    const d = await safeFetch(
+    const d = await fetchJson(
       `https://api.nasa.gov/planetary/apod?api_key=${NASA_KEY()}`
     );
     const desc = (d.explanation ?? '').slice(0, 220) +
@@ -76,7 +73,7 @@ export const COMMANDS = {
   },
 
   iss: async () => {
-    const d = await safeFetch('https://api.wheretheiss.at/v1/satellites/25544');
+    const d = await fetchJson('https://api.wheretheiss.at/v1/satellites/25544');
     return [
       amb('ISS LIVE TELEMETRY'), sep(),
       gl(`LATITUDE    ${d.latitude.toFixed(4)}  ${d.latitude  >= 0 ? 'N' : 'S'}`),
@@ -88,7 +85,7 @@ export const COMMANDS = {
   },
 
   launches: async () => {
-    const d = await safeFetch(
+    const d = await fetchJson(
       'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=3'
     );
     const lines = [amb('UPCOMING LAUNCHES'), sep()];
@@ -113,7 +110,7 @@ export const COMMANDS = {
       ];
     }
     const q = encodeURIComponent(`mars ${name} rover`);
-    const d = await safeFetch(
+    const d = await fetchJson(
       `https://images-api.nasa.gov/search?q=${q}&media_type=image&page_size=1`
     );
     const item = d.collection?.items?.[0];

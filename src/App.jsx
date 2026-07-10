@@ -4,6 +4,7 @@ import {
   Route,
   Link as RouterLink,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import {
   Box,
@@ -12,19 +13,24 @@ import {
   Spacer,
   Container,
   Text,
+  useToast,
 } from '@chakra-ui/react';
-import { Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
-import Home from './pages/Home';
-import LaunchPage from './pages/LaunchPage';
-import MarsPage from './pages/MarsPage';
-import ExplorePage from './pages/ExplorePage';
-import SolarSimPage from './pages/SolarSimPage';
-import ISSLivePage from './pages/issLive';
+// Route pages are code-split so heavy dependencies (Three.js on /solarsim,
+// Leaflet on /iss) stay out of the initial bundle and load on demand.
+const Home = lazy(() => import('./pages/Home'));
+const LaunchPage = lazy(() => import('./pages/LaunchPage'));
+const MarsPage = lazy(() => import('./pages/MarsPage'));
+const ExplorePage = lazy(() => import('./pages/ExplorePage'));
+const SolarSimPage = lazy(() => import('./pages/SolarSimPage'));
+const ISSLivePage = lazy(() => import('./pages/issLive'));
 import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
+import WarpTransition from './components/WarpTransition';
 import NavLaunchCountdown from './components/NavLaunchCountdown';
+import { useKonamiCode } from './hooks/useKonamiCode';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -42,9 +48,11 @@ const navigationItems = [
   { path: '/launches', label: 'Launches' },
   { path: '/mars',     label: 'Mars' },
   { path: '/explore',  label: 'Explore' },
-  { path: '/solarsim', label: 'Solar System' },
   { path: '/iss',      label: 'ISS' },
 ];
+
+// /solarsim is intentionally unlisted // reachable via the Konami code
+// (see KonamiWarp below) or a direct link, as a hidden easter egg.
 
 function Navigation() {
   const location = useLocation();
@@ -111,6 +119,38 @@ function Navigation() {
   );
 }
 
+// Hidden easter egg: enter the Konami code anywhere on the site to warp
+// straight to the solar system view.
+function KonamiWarp() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
+  const [warping, setWarping] = useState(false);
+
+  useKonamiCode(() => {
+    if (location.pathname !== '/solarsim') setWarping(true);
+  });
+
+  if (!warping) return null;
+
+  return (
+    <WarpTransition
+      onFinished={() => {
+        setWarping(false);
+        navigate('/solarsim');
+        toast({
+          title: 'Warp drive engaged',
+          description: 'Secret solar system sim unlocked. Welcome, navigator.',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+          position: 'bottom',
+        });
+      }}
+    />
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
@@ -155,6 +195,7 @@ function App() {
       <Router>
         <Box minH="100vh" bg="bg.body">
           <StarField />
+          <KonamiWarp />
           <Box position="relative" zIndex={1}>
             <Navigation />
             <Box as="main">

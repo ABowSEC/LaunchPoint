@@ -25,7 +25,7 @@ export const BOOT_LINES = [
   dim(''),
 ];
 
-// ── Safe fetch helper — throws on non-ok ──────────────────────────────────────
+// ── Safe fetch helper // throws on non-ok ──────────────────────────────────────
 async function safeFetch(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API ${res.status}`);
@@ -43,11 +43,21 @@ export const COMMANDS = {
     gl('  rover [name]      '), dim('    Mars rover latest image info'),
     dim('    curiosity | perseverance | spirit | opportunity'),
     gl('  date              '), dim('    Current UTC date & time'),
+    gl('  tricks           '), dim('    secrets? We don\'t have any...Mr. Konami'),
     gl('  clear             '), dim('    Clear the terminal'),
     sep(),
   ],
 
   date: async () => [gl(new Date().toUTCString())],
+
+  tricks: async () => [
+    amb('NICE TRY'),
+    sep(),
+    dim('This terminal contains no secrets.'),
+    dim('Certainly nothing a 1986 Gradius player would recognize.'),
+    dim(''),
+    cyn('  ^ ^ v v < > < > B A'),
+  ],
 
   apod: async () => {
     const d = await safeFetch(

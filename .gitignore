@@ -10,8 +10,10 @@ build/
 .env.*.local
 
 # OS-specific
-.DS_Store         # macOS
-Thumbs.db         # Windows
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
 
 # Editor-specific
 .vscode/

@@ -68,18 +68,26 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
-        const today = new Date().toISOString().slice(0, 10);
+        // Local calendar date (en-CA gives YYYY-MM-DD). APOD publishes on US
+        // Eastern time, so using UTC here can roll the date forward a day early
+        // and cache yesterday's image under today's key.
+        const today = new Date().toLocaleDateString('en-CA');
         const cacheKey = `apod_${today}`;
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          setApod(JSON.parse(cached));
-          return;
+        // A corrupt cache entry should fall through to a refetch, not error out
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            setApod(JSON.parse(cached));
+            return;
+          }
+        } catch {
+          localStorage.removeItem(cacheKey);
         }
 
-        const apiKey = import.meta.env.VITE_NASA_API_KEY;
+        const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
 
-        if (!apiKey || apiKey === 'DEMO_KEY') {
-          console.warn('Using DEMO_KEY - limited to 1000 requests per hour');
+        if (apiKey === 'DEMO_KEY') {
+          console.warn('Using DEMO_KEY - limited to 30 requests per hour');
         }
 
         const res = await fetch(
@@ -99,11 +107,16 @@ export default function Home() {
         }
 
         const data = await res.json();
-        // Evict any stale APOD entries before writing the new one
-        Object.keys(localStorage)
-          .filter(k => k.startsWith('apod_') && k !== cacheKey)
-          .forEach(k => localStorage.removeItem(k));
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+        // Cache failures (quota, private browsing) must not fail the fetch
+        try {
+          // Evict any stale APOD entries before writing the new one
+          Object.keys(localStorage)
+            .filter(k => k.startsWith('apod_') && k !== cacheKey)
+            .forEach(k => localStorage.removeItem(k));
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch {
+          // Ignore: worst case we refetch on the next visit
+        }
         setApod(data);
       } catch (err) {
         console.error('APOD fetch error:', err);
@@ -117,6 +130,10 @@ export default function Home() {
   }, []);
 
   const toggleDescription = () => setShowFullDescription((prev) => !prev);
+
+  // apod.url points at a video embed (e.g. YouTube) when media_type is video,
+  // so the modal must not treat it as an image source or download target.
+  const isVideoApod = apod?.media_type === "video";
 
   const renderAPODContent = () => {
     if (loading) {
@@ -264,7 +281,9 @@ export default function Home() {
             {apod.date && (
               <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
                 <CalendarIcon mr={2} />
-                {new Date(apod.date).toLocaleDateString("en-US")}
+                {/* apod.date is a plain calendar date; format in UTC so it
+                    isn't shifted back a day in timezones behind UTC. */}
+                {new Date(apod.date).toLocaleDateString("en-US", { timeZone: "UTC" })}
               </Badge>
             )}
             {apod.copyright && apod.copyright.trim() !== "" ? (
@@ -374,21 +393,16 @@ export default function Home() {
                 >
                   Open Original
                 </Button>
-                <Button
-                  leftIcon={<DownloadIcon />}
-                  size="sm"
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = apod?.url;
-                    link.download = `apod_${apod?.date || 'today'}.jpg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                  colorScheme="brand"
-                >
-                  Download
-                </Button>
+                {!isVideoApod && (
+                  <Button
+                    leftIcon={<DownloadIcon />}
+                    size="sm"
+                    onClick={() => window.open(apod?.hdurl || apod?.url, '_blank')}
+                    colorScheme="brand"
+                  >
+                    Download
+                  </Button>
+                )}
               </HStack>
             </HStack>
           </ModalHeader>
@@ -396,14 +410,26 @@ export default function Home() {
           <ModalBody pb={6}>
             {apod && (
               <VStack spacing={4}>
-                <Image
-                  src={apod.url}
-                  alt={apod.title}
-                  maxH="70vh"
-                  objectFit="contain"
-                  borderRadius="lg"
-                  fallback={<Skeleton height="60vh" width="100%" borderRadius="lg" />}
-                />
+                {isVideoApod ? (
+                  <AspectRatio ratio={16 / 9} w="100%">
+                    <Box
+                      as="iframe"
+                      src={apod.url}
+                      title={apod.title}
+                      allowFullScreen
+                      borderRadius="lg"
+                    />
+                  </AspectRatio>
+                ) : (
+                  <Image
+                    src={apod.url}
+                    alt={apod.title}
+                    maxH="70vh"
+                    objectFit="contain"
+                    borderRadius="lg"
+                    fallback={<Skeleton height="60vh" width="100%" borderRadius="lg" />}
+                  />
+                )}
                 <VStack spacing={3} w="100%" textAlign="left">
                   <Box w="100%" p={4} bg="bg.elevated" border="1px solid" borderColor="border.default" borderRadius="lg">
                     <Heading as="h3" size="sm" mb={3} color="text.primary">

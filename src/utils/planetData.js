@@ -169,5 +169,5 @@ export const getPlanetData = (planetName) => {
  * @returns {string[]}
  */
 export const getPlanetsWithRings = () => {
-  return Object.entries(planetOrbitData).filter(([_, data]) => data.hasRings).map(([name, _]) => name);
+  return Object.entries(planetOrbitData).filter(([, data]) => data.hasRings).map(([name]) => name);
 };

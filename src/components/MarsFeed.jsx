@@ -33,25 +33,31 @@ export default function MarsFeed({ rover, page, onPageChange }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
+    // Abort the in-flight request when rover/page changes so a slow, stale
+    // response can never overwrite a newer one
+    const controller = new AbortController();
+
     const fetchPhotos = async () => {
       setLoading(true);
       setError(null);
       try {
         const query = encodeURIComponent(`mars ${rover} rover`);
         const url = `https://images-api.nasa.gov/search?q=${query}&media_type=image&page_size=${PAGE_SIZE}&page=${page}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
         setPhotos(data.collection.items || []);
         setTotalHits(data.collection.metadata?.total_hits || 0);
+        setLoading(false);
       } catch (err) {
+        if (err.name === "AbortError") return;
         setError(err.message);
-      } finally {
         setLoading(false);
       }
     };
 
     fetchPhotos();
+    return () => controller.abort();
   }, [rover, page]);
 
   const handleOpen = (photo) => {

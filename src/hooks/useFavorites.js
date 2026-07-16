@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 // using this hook stays in sync: same-tab updates broadcast a custom event,
 // and the native 'storage' event covers other tabs.
 
-const KEY = 'launchpoint.favorites.v1';
-const CHANGE_EVENT = 'launchpoint:favorites-changed';
+const KEY = 'ephemeris.favorites.v1';
+const CHANGE_EVENT = 'ephemeris:favorites-changed';
 
 function readFavorites() {
   try {

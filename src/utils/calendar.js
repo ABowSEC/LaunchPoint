@@ -23,7 +23,7 @@ function launchDetails(launch) {
     launch.rocket?.configuration?.name && `Rocket: ${launch.rocket.configuration.name}`,
     launch.mission?.description,
     launch.vid_urls?.[0]?.url && `Watch: ${launch.vid_urls[0].url}`,
-    'Tracked via LaunchPoint',
+    'Tracked via Ephemeris',
   ];
   return lines.filter(Boolean).join('\n');
 }
@@ -60,11 +60,11 @@ export function buildIcs(launch) {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//LaunchPoint//Launch Tracker//EN',
+    'PRODID:-//Ephemeris//Launch Tracker//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:${launch.id}@launchpoint`,
+    `UID:${launch.id}@ephemeris`,
     `DTSTAMP:${toCalendarUtc(new Date().toISOString())}`,
     `DTSTART:${toCalendarUtc(start)}`,
     `DTEND:${toCalendarUtc(end)}`,

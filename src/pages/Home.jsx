@@ -239,7 +239,7 @@ function cleanCopyright(raw) {
 }
 
 export default function Home() {
-  usePageTitle("LaunchPoint - Live Rocket Launch Tracker", { full: true });
+  usePageTitle("Ephemeris - Live Rocket Launch Tracker", { full: true });
   const { data: apod, loading, error, refetch } = useApi(fetchApod);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -541,7 +541,7 @@ export default function Home() {
                 letterSpacing="0.25em"
                 textTransform="uppercase"
               >
-                LaunchPoint · Mission Control
+                Ephemeris · Mission Control
               </Text>
 
               <Heading
@@ -632,7 +632,10 @@ export default function Home() {
                 >
                   Open Original
                 </Button>
-                {!isVideoApod && (
+                {/* Download only for NASA-owned (public domain) images; APODs
+                    with a copyright field belong to the photographer and we
+                    shouldn't distribute them */}
+                {!isVideoApod && !cleanCopyright(apod?.copyright) && (
                   <Button
                     leftIcon={<DownloadIcon />}
                     size="sm"

@@ -11,7 +11,7 @@
 import { fetchJson } from '../utils/fetchJson';
 
 const API_URL = 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50';
-const CACHE_KEY = 'launchpoint.upcomingLaunches.v1';
+const CACHE_KEY = 'ephemeris.upcomingLaunches.v1';
 export const FRESH_MS = 5 * 60 * 1000;
 
 let inflight = null;

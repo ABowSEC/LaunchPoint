@@ -64,8 +64,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'LaunchPoint',
-        short_name: 'LaunchPoint',
+        name: 'Ephemeris',
+        short_name: 'Ephemeris',
         description:
           'Track rocket launches worldwide: live countdowns, a world launch map, tracked-launch alerts, and calendar export.',
         theme_color: '#06091A',

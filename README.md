@@ -1,4 +1,4 @@
-# LaunchPoint
+# Ephemeris
 
 Live spaceflight dashboard: rocket launch tracking, a world launch map, ISS telemetry, Mars imagery, and NASA's picture of the day, all in a single installable React PWA.
 
@@ -48,6 +48,6 @@ React 18, Vite, Chakra UI, React Router (code-split routes), Framer Motion, Thre
 
 ## License
 
-Copyright (c) 2025 AJ Bowman.
+Copyright (c) 2025 ABowSEC.
 
 Licensed under [CC BY-NC 4.0](./LICENSE): share and adapt with attribution, no commercial use. NASA and other third-party data, imagery, and APIs are subject to their own terms.

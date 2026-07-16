@@ -1,4 +1,4 @@
-import { Box, Container, Flex, Image, Link } from "@chakra-ui/react";
+import { Box, Container, Flex, Image, Link, Text } from "@chakra-ui/react";
 import { FaGithub } from "react-icons/fa";
 
 const CREDITS = [
@@ -26,16 +26,26 @@ export default function Footer() {
           justify="space-between"
           gap={6}
         >
-          {/* Full brand lockup; screen blend melts its dark field into the footer */}
-          <Image
-            src="/icons/launchpointFULLIMG.png"
-            alt="LaunchPoint - explore, build, launch"
-            h={{ base: "72px", md: "88px" }}
-            w="auto"
-            mixBlendMode="screen"
-            draggable={false}
-            flexShrink={0}
-          />
+          {/* Emblem + wordmark until new brand art exists (the old full
+              lockup image carries the previous name) */}
+          <Flex align="center" gap={2.5} flexShrink={0}>
+            <Image
+              src="/icons/icon-192.png"
+              alt=""
+              boxSize="36px"
+              borderRadius="full"
+              draggable={false}
+            />
+            <Text
+              fontWeight="700"
+              fontSize="md"
+              letterSpacing="widest"
+              textTransform="uppercase"
+              color="brand.400"
+            >
+              Ephemeris
+            </Text>
+          </Flex>
 
           <Flex
             direction="column"
@@ -68,6 +78,9 @@ export default function Footer() {
             >
               <FaGithub /> Source on GitHub
             </Link>
+            <Text fontSize="xs" color="text.secondary" opacity={0.7} mt={1}>
+              An independent project, not affiliated with or endorsed by NASA.
+            </Text>
           </Flex>
         </Flex>
       </Container>

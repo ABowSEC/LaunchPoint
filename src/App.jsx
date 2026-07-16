@@ -115,7 +115,7 @@ function Navigation() {
             />
             {/* Wordmark hides on the narrowest screens; emblem carries the brand */}
             <Text as="span" display={{ base: 'none', sm: 'inline' }}>
-              LaunchPoint
+              Ephemeris
             </Text>
           </Link>
 
@@ -186,7 +186,7 @@ function Navigation() {
               borderRadius="full"
               draggable={false}
             />
-            LaunchPoint
+            Ephemeris
           </DrawerHeader>
           <DrawerBody>
             <VStack align="stretch" spacing={1}>

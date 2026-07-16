@@ -8,9 +8,9 @@ import { readFavorites } from './useFavorites';
 // alert thresholds and fires a system notification plus an in-app toast.
 // Fired alerts are recorded in localStorage so refreshes don't repeat them.
 
-const PREF_KEY = 'launchpoint.alertsEnabled.v1';
-const FIRED_KEY = 'launchpoint.alertsFired.v1';
-const PREF_EVENT = 'launchpoint:alerts-changed';
+const PREF_KEY = 'ephemeris.alertsEnabled.v1';
+const FIRED_KEY = 'ephemeris.alertsFired.v1';
+const PREF_EVENT = 'ephemeris:alerts-changed';
 const CHECK_MS = 30 * 1000;
 
 // Ordered widest first; a launch starred inside a window only announces the

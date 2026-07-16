@@ -2,8 +2,10 @@ import { useState } from "react";
 import {
   Box,
   Button,
+  Flex,
   VStack,
   HStack,
+  Stack,
   Text,
   Heading,
   SimpleGrid,
@@ -34,9 +36,89 @@ import {
   DownloadIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
+import { FaRocket, FaMapMarkerAlt } from "react-icons/fa";
 import { fetchJson } from "../utils/fetchJson";
 import { useApi } from "../hooks/useApi";
+import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
+import { useCountdown } from "../hooks/useCountdown";
+import { usePageTitle } from "../hooks/usePageTitle";
 import ErrorState from "../components/ErrorState";
+
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+`;
+
+// Compact live next-launch panel for the hero; shares the app-wide cached
+// launch data so it costs no extra API requests.
+function NextLaunchPanel() {
+  const { launches, loading } = useUpcomingLaunches();
+  const next = launches[0] ?? null;
+  const countdown = useCountdown(next?.window_start);
+
+  if (loading) {
+    return (
+      <Box minW={{ base: "auto", md: "300px" }} textAlign="center" py={8}>
+        <Spinner color="orange.400" thickness="3px" />
+      </Box>
+    );
+  }
+  if (!next) return null;
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return (
+    <VStack
+      as={RouterLink}
+      to="/launches"
+      align="stretch"
+      spacing={3}
+      bg="rgba(251,146,60,0.06)"
+      border="1px solid"
+      borderColor="orange.800"
+      rounded="xl"
+      p={6}
+      minW={{ base: "100%", md: "320px" }}
+      maxW="360px"
+      transition="all 0.2s"
+      _hover={{ borderColor: "orange.500", bg: "rgba(251,146,60,0.12)", textDecoration: "none" }}
+    >
+      <HStack spacing={2}>
+        <Box as={FaRocket} color="orange.400" boxSize="10px" animation={`${pulse} 2s ease-in-out infinite`} />
+        <Text fontSize="10px" color="orange.400" fontWeight="bold" letterSpacing="0.2em" textTransform="uppercase">
+          Next Launch
+        </Text>
+        {next.status?.abbrev && (
+          <Badge colorScheme={next.status.abbrev === "Go" ? "green" : "gray"} variant="subtle" fontSize="10px" rounded="full" ml="auto">
+            {next.status.abbrev}
+          </Badge>
+        )}
+      </HStack>
+
+      <Text fontWeight="bold" color="text.primary" fontSize="md" noOfLines={2}>
+        {next.name}
+      </Text>
+
+      {countdown ? (
+        <Text fontFamily="mono" fontSize="3xl" fontWeight="bold" color="orange.300" letterSpacing="wide" lineHeight="1">
+          {countdown.d > 0 && `${countdown.d}d `}
+          {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
+        </Text>
+      ) : (
+        <Badge colorScheme="green" alignSelf="start" rounded="full" px={3}>
+          Launched!
+        </Badge>
+      )}
+
+      {next.pad?.location?.name && (
+        <HStack color="text.secondary" fontSize="xs" spacing={2}>
+          <Box as={FaMapMarkerAlt} boxSize="10px" flexShrink={0} />
+          <Text noOfLines={1}>{next.pad.location.name}</Text>
+        </HStack>
+      )}
+    </VStack>
+  );
+}
 
 // Content-arrival reveal: APOD data lands a beat after the page; a short
 // fade-and-rise acknowledges it without page-load choreography.
@@ -93,6 +175,7 @@ async function fetchApod(signal) {
 }
 
 export default function Home() {
+  usePageTitle("LaunchPoint - Live Rocket Launch Tracker", { full: true });
   const { data: apod, loading, error, refetch } = useApi(fetchApod);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -145,119 +228,176 @@ export default function Home() {
     const isImage = apod.media_type === "image" || /\.(gif|jpe?g|png)$/i.test(apod.url);//Falls through to the non-image branch when neither matches (e.g. interactive embeds).
 
     const description = apod.explanation || "";
-    const shouldTruncate = description.length > 200;
-    const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 200)}...`;
+    const shouldTruncate = description.length > 320;
+    const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 320)}...`;
+
+    // Single source for the credit line; copyright strings from the API can
+    // contain newlines and embedded "Text:" attributions
+    const credit = apod.copyright && apod.copyright.trim() !== ""
+      ? `Photography by ${apod.copyright.replace(/\s+/g, " ").trim()}`
+      : "Courtesy of NASA";
   
     return (
-      <VStack spacing={8} animation={revealAnim}>
-        <Box bg="bg.card" p={6} rounded="xl" shadow="lg" position="relative">
-          {isVideo ? (
-            apod.thumbnail_url ? (
-              <Box position="relative" onClick={onOpen} cursor="pointer">
-                <Image 
-                  src={apod.thumbnail_url} 
-                  alt="Video thumbnail" 
-                  rounded="md" 
-                  maxH="500px"
-                  objectFit="cover"
-                  fallbackSrc="/hal9000.png"
-                />
-                <IconButton
-                  icon={<ArrowForwardIcon />}
-                  aria-label="Play video"
-                  position="absolute"
-                  top="50%"
-                  left="50%"
-                  transform="translate(-50%, -50%)"
-                  colorScheme="brand"
-                  size="lg"
-                  isRound
-                  bg="whiteAlpha.800"
-                />
-              </Box>
-            ) : (
-              <AspectRatio ratio={16 / 9}>
-                <Box as="iframe" src={apod.url} title={apod.title} allowFullScreen rounded="md" />
-              </AspectRatio>
-            )
-          ) : isImage ? (
-            <>
-              {!imgLoaded && !imgError && (
-                <Skeleton rounded="md" height="500px" width="min(80vw, 640px)" />
-              )}
-              {imgError ? (
-                <Image
-                  src="/hal9000.png"
-                  alt="Image unavailable"
-                  rounded="md"
-                  maxH="500px"
-                  objectFit="contain"
-                />
+      <VStack spacing={8} align="stretch" animation={revealAnim}>
+        {/* Section header: says what this feature is before the photo title */}
+        <Box textAlign={{ base: "center", lg: "left" }}>
+          <Text
+            fontSize="10px"
+            color="brand.400"
+            fontWeight="bold"
+            letterSpacing="0.25em"
+            textTransform="uppercase"
+            mb={2}
+          >
+            NASA · Astronomy Picture of the Day
+          </Text>
+          <Heading as="h2" size="lg" color="text.primary">
+            Today's view of the cosmos
+          </Heading>
+        </Box>
+
+        <Flex
+          bg="bg.card"
+          border="1px solid"
+          borderColor="border.default"
+          rounded="2xl"
+          overflow="hidden"
+          shadow="lg"
+          direction={{ base: "column", lg: "row" }}
+        >
+          {/* Media side */}
+          <Box
+            position="relative"
+            overflow="hidden"
+            flex={{ lg: 1.25 }}
+            minH={{ base: "300px", md: "420px", lg: "520px" }}
+            bg="black"
+          >
+            {isVideo ? (
+              apod.thumbnail_url ? (
+                <Box position="absolute" inset={0} onClick={onOpen} cursor="pointer">
+                  <Image
+                    src={apod.thumbnail_url}
+                    alt="Video thumbnail"
+                    w="100%"
+                    h="100%"
+                    objectFit="cover"
+                    fallbackSrc="/hal9000.png"
+                  />
+                  <IconButton
+                    icon={<ArrowForwardIcon />}
+                    aria-label="Play video"
+                    position="absolute"
+                    top="50%"
+                    left="50%"
+                    transform="translate(-50%, -50%)"
+                    colorScheme="brand"
+                    size="lg"
+                    isRound
+                    bg="whiteAlpha.800"
+                  />
+                </Box>
               ) : (
-                <Image
+                <Box
+                  as="iframe"
                   src={apod.url}
+                  title={apod.title}
+                  allowFullScreen
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  w="100%"
+                  h="100%"
+                />
+              )
+            ) : isImage ? (
+              <>
+                {!imgLoaded && !imgError && (
+                  <Skeleton position="absolute" inset={0} rounded="none" />
+                )}
+                {/* Ambient backdrop: blurred cover copy fills the letterbox
+                    bars so any aspect ratio fits without cropping */}
+                {imgLoaded && !imgError && (
+                  <Image
+                    src={apod.url}
+                    alt=""
+                    aria-hidden="true"
+                    position="absolute"
+                    inset={0}
+                    w="100%"
+                    h="100%"
+                    objectFit="cover"
+                    filter="blur(28px) brightness(0.4) saturate(1.1)"
+                    transform="scale(1.15)"
+                    pointerEvents="none"
+                  />
+                )}
+                <Image
+                  src={imgError ? "/hal9000.png" : apod.url}
                   alt={apod.title}
-                  rounded="md"
-                  maxH="500px"
-                  objectFit="cover"
+                  position="absolute"
+                  inset={0}
+                  w="100%"
+                  h="100%"
+                  objectFit="contain"
                   cursor="pointer"
-                  display={imgLoaded ? "block" : "none"}
+                  display={imgLoaded || imgError ? "block" : "none"}
                   onClick={onOpen}
-                  transition="transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
+                  transition="transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease"
                   _hover={
                     prefersReducedMotion
                       ? { filter: "brightness(1.08)" }
-                      : { transform: "scale(1.02)" }
+                      : { transform: "scale(1.03)" }
                   }
                 />
-              )}
-              <IconButton
-                position="absolute"
-                top="8"
-                right="8"
-                aria-label="View fullscreen"
-                icon={<ExternalLinkIcon />}
-                onClick={onOpen}
-                colorScheme="brand"
-                variant="solid"
-                opacity={0.8}
-                _hover={
-                  prefersReducedMotion
-                    ? { opacity: 1 }
-                    : { opacity: 1, transform: "scale(1.1)" }
-                }
-                transition="opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-              />
-            </>
-          ) : (
-            <VStack spacing={4}>
-              <Image 
-                src="/hal9000.png" 
-                alt="No media available" 
-                rounded="md"
-                maxH="400px"
-                objectFit="contain"
-              />
-              <Text color="text.secondary" fontStyle="italic">
-                No image or video available for this APOD.
-              </Text>
-              <Button
-                as="a"
-                href="https://apod.nasa.gov/apod/astropix.html"
-                target="_blank"
-                leftIcon={<ExternalLinkIcon />}
-                colorScheme="brand"
-              >
-                View on NASA APOD
-              </Button>
-            </VStack>
-          )}
-        </Box>
+                <IconButton
+                  position="absolute"
+                  top={4}
+                  right={4}
+                  aria-label="View fullscreen"
+                  icon={<ExternalLinkIcon />}
+                  onClick={onOpen}
+                  colorScheme="brand"
+                  variant="solid"
+                  opacity={0.85}
+                  _hover={{ opacity: 1 }}
+                  transition="opacity 0.3s ease"
+                />
+              </>
+            ) : (
+              <VStack position="absolute" inset={0} justify="center" spacing={4} p={6}>
+                <Image
+                  src="/hal9000.png"
+                  alt="No media available"
+                  maxH="200px"
+                  objectFit="contain"
+                />
+                <Text color="text.secondary" fontStyle="italic">
+                  No image or video available for this APOD.
+                </Text>
+                <Button
+                  as="a"
+                  href="https://apod.nasa.gov/apod/astropix.html"
+                  target="_blank"
+                  leftIcon={<ExternalLinkIcon />}
+                  colorScheme="brand"
+                  size="sm"
+                >
+                  View on NASA APOD
+                </Button>
+              </VStack>
+            )}
+          </Box>
   
-        <VStack spacing={4} textAlign="center">
-          <Heading as="h2" size="lg" fontWeight="700">{apod.title}</Heading>
-  
-          <HStack justify="center" wrap="wrap" spacing={3}>
+          {/* Story side */}
+          <VStack
+            flex={1}
+            align={{ base: "center", lg: "start" }}
+            textAlign={{ base: "center", lg: "left" }}
+            justify="center"
+            p={{ base: 6, md: 10 }}
+            spacing={4}
+          >
             {apod.date && (
               <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
                 <CalendarIcon mr={2} />
@@ -266,34 +406,26 @@ export default function Home() {
                 {new Date(apod.date).toLocaleDateString("en-US", { timeZone: "UTC" })}
               </Badge>
             )}
-            {apod.copyright && apod.copyright.trim() !== "" ? (
-              <Badge bg="bg.elevated" color="text.primary" px={3} py={1} borderRadius="full" textTransform="none">
-                Photography by {apod.copyright}
-              </Badge>
-            ) : (
-              <Badge bg="bg.elevated" color="text.secondary" px={3} py={1} borderRadius="full" textTransform="none">
-                NASA Image
-              </Badge>
+
+            <Heading as="h3" size="md" fontWeight="700" sx={{ textWrap: 'balance' }}>
+              {apod.title}
+            </Heading>
+
+            <Text fontSize="md" color="text.primary" lineHeight="1.7" sx={{ textWrap: 'pretty' }}>
+              {displayDescription}
+            </Text>
+
+            {shouldTruncate && (
+              <Button variant="link" colorScheme="brand" size="sm" onClick={toggleDescription}>
+                {showFullDescription ? "Show Less" : "Read More"}
+              </Button>
             )}
-          </HStack>
 
-          <Text fontSize="md" maxW="65ch" color="text.primary" sx={{ textWrap: 'pretty' }}>
-            {displayDescription}
-          </Text>
-
-          {shouldTruncate && (
-            <Button variant="link" colorScheme="brand" size="sm" onClick={toggleDescription} rightIcon={<ExternalLinkIcon />}>
-              {showFullDescription ? "Show Less" : "Read More"}
-            </Button>
-          )}
-
-          <Text fontSize="sm" color="text.secondary" fontStyle="italic">
-            {apod.copyright && apod.copyright.trim() !== ""
-              ? `Photography by ${apod.copyright}`
-              : "Courtesy of NASA"}
-          </Text>
-
-        </VStack>
+            <Text fontSize="sm" color="text.secondary">
+              {credit}
+            </Text>
+          </VStack>
+        </Flex>
       </VStack>
     );
   };
@@ -302,54 +434,115 @@ export default function Home() {
   return (
     <Box py={16} px={6}>
       <Container maxW="7xl">
-        <VStack spacing={10} textAlign="center">
-          <Heading
-            as="h1"
-            fontSize="clamp(2.25rem, 5vw, 3rem)"
-            fontWeight="700"
-            letterSpacing="-0.02em"
-            lineHeight="1.1"
-            color="text.primary"
-            sx={{ textWrap: 'balance' }}
+        {/* Mission-control hero: brand + copy left, live countdown right */}
+        <Box
+          position="relative"
+          bg="bg.card"
+          border="1px solid"
+          borderColor="border.default"
+          rounded="2xl"
+          overflow="hidden"
+          p={{ base: 8, md: 12 }}
+        >
+          {/* Emblem watermark; screen blend melts its black field into the card */}
+          <Image
+            src="/icons/LaunchPNTLOGO.png"
+            alt=""
+            aria-hidden="true"
+            position="absolute"
+            right={{ base: "-140px", lg: "340px" }}
+            top="50%"
+            transform="translateY(-50%)"
+            boxSize={{ base: "360px", md: "460px" }}
+            opacity={0.22}
+            mixBlendMode="screen"
+            pointerEvents="none"
+            draggable={false}
+          />
+
+          <Flex
+            position="relative"
+            direction={{ base: "column", lg: "row" }}
+            align="center"
+            justify="space-between"
+            gap={{ base: 10, lg: 12 }}
           >
-            Welcome to LaunchPoint
-          </Heading>
-          <Text fontSize="xl" color="text.secondary" maxW="46ch">
-            Live imagery, telemetry, and launch schedules, straight from NASA.
-          </Text>
-          <HStack spacing={4}>
-            <Button
-              as={RouterLink}
-              to="/explore"
-              size="lg"
-              colorScheme="brand"
-              _hover={
-                prefersReducedMotion
-                  ? { boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
-                  : { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
-              }
-              _active={prefersReducedMotion ? undefined : { transform: 'translateY(0)' }}
-              transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease"
+            <VStack
+              align={{ base: "center", lg: "start" }}
+              textAlign={{ base: "center", lg: "left" }}
+              spacing={5}
+              maxW={{ lg: "560px" }}
             >
-              Start Exploring
-            </Button>
-            <Button
-              as={RouterLink}
-              to="/launches"
-              size="lg"
-              variant="outline"
-              colorScheme="brand"
-              _hover={
-                prefersReducedMotion
-                  ? { bg: 'whiteAlpha.50' }
-                  : { transform: 'translateY(-2px)', bg: 'whiteAlpha.50' }
-              }
-              transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease"
-            >
-              View Launches
-            </Button>
-          </HStack>
-        </VStack>
+              <Text
+                fontSize="10px"
+                color="brand.400"
+                fontWeight="bold"
+                letterSpacing="0.25em"
+                textTransform="uppercase"
+              >
+                LaunchPoint · Mission Control
+              </Text>
+
+              <Heading
+                as="h1"
+                fontSize="clamp(2rem, 4.5vw, 2.75rem)"
+                fontWeight="700"
+                letterSpacing="-0.02em"
+                lineHeight="1.12"
+                color="text.primary"
+                sx={{ textWrap: 'balance' }}
+              >
+                Your mission control for spaceflight
+              </Heading>
+
+              <Text fontSize="lg" color="text.secondary" maxW="44ch">
+                Live launch countdowns, a world launch map, and imagery from
+                Earth orbit and beyond.
+              </Text>
+
+              {/* CTAs stack on phones: side by side they overflow the card */}
+              <Stack
+                direction={{ base: "column", sm: "row" }}
+                spacing={4}
+                pt={2}
+                w={{ base: "full", sm: "auto" }}
+              >
+                <Button
+                  as={RouterLink}
+                  to="/launches"
+                  size="lg"
+                  colorScheme="brand"
+                  _hover={
+                    prefersReducedMotion
+                      ? { boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
+                      : { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
+                  }
+                  _active={prefersReducedMotion ? undefined : { transform: 'translateY(0)' }}
+                  transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease"
+                >
+                  View Launches
+                </Button>
+                <Button
+                  as={RouterLink}
+                  to="/map"
+                  size="lg"
+                  variant="outline"
+                  colorScheme="brand"
+                  _hover={
+                    prefersReducedMotion
+                      ? { bg: 'whiteAlpha.50' }
+                      : { transform: 'translateY(-2px)', bg: 'whiteAlpha.50' }
+                  }
+                  transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease"
+                >
+                  World Map
+                </Button>
+              </Stack>
+            </VStack>
+
+            <NextLaunchPanel />
+          </Flex>
+        </Box>
 
         <Divider my={12} />
 

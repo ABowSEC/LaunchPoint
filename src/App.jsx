@@ -9,12 +9,24 @@ import {
 import {
   Box,
   Flex,
+  HStack,
+  VStack,
+  Image,
+  IconButton,
   Link,
   Spacer,
   Container,
   Text,
   useToast,
+  useDisclosure,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
 } from '@chakra-ui/react';
+import { HamburgerIcon } from '@chakra-ui/icons';
 import { lazy, Suspense, useState } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
@@ -22,6 +34,7 @@ import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 // Leaflet on /iss) stay out of the initial bundle and load on demand.
 const Home = lazy(() => import('./pages/Home'));
 const LaunchPage = lazy(() => import('./pages/LaunchPage'));
+const LaunchMapPage = lazy(() => import('./pages/LaunchMapPage'));
 const MarsPage = lazy(() => import('./pages/MarsPage'));
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
 const SolarSimPage = lazy(() => import('./pages/SolarSimPage'));
@@ -30,7 +43,9 @@ import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
 import WarpTransition from './components/WarpTransition';
 import NavLaunchCountdown from './components/NavLaunchCountdown';
+import Footer from './components/Footer';
 import { useKonamiCode } from './hooks/useKonamiCode';
+import { useLaunchAlerts } from './hooks/useLaunchAlerts';
 
 // Named alias: ESLint's no-unused-vars can't see `motion` used as <motion.div>
 const MotionDiv = motion.div;
@@ -49,6 +64,7 @@ const pageTransition = {
 const navigationItems = [
   { path: '/',         label: 'Home' },
   { path: '/launches', label: 'Launches' },
+  { path: '/map',      label: 'Map' },
   { path: '/mars',     label: 'Mars' },
   { path: '/explore',  label: 'Explore' },
   { path: '/iss',      label: 'ISS' },
@@ -59,6 +75,7 @@ const navigationItems = [
 
 function Navigation() {
   const location = useLocation();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box
@@ -76,48 +93,132 @@ function Navigation() {
           <Link
             as={RouterLink}
             to="/"
+            display="flex"
+            alignItems="center"
+            gap={2}
             fontWeight="700"
             fontSize="sm"
             letterSpacing="widest"
             textTransform="uppercase"
             color="brand.400"
             _hover={{ textDecoration: 'none', color: 'brand.300' }}
-            mr={6}
+            mr={{ base: 3, md: 6 }}
+            flexShrink={0}
           >
-            LaunchPoint
+            {/* Brand emblem (LaunchPNTLOGO artwork, from the app icon set) */}
+            <Image
+              src="/icons/icon-192.png"
+              alt=""
+              boxSize="32px"
+              borderRadius="full"
+              draggable={false}
+            />
+            {/* Wordmark hides on the narrowest screens; emblem carries the brand */}
+            <Text as="span" display={{ base: 'none', sm: 'inline' }}>
+              LaunchPoint
+            </Text>
           </Link>
 
-          {navigationItems.map(({ path, label }) => {
-            const isActive = location.pathname === path;
-            return (
-              <Link
-                key={path}
-                as={RouterLink}
-                to={path}
-                px={3}
-                py={1}
-                borderRadius="md"
-                fontSize="sm"
-                fontWeight={isActive ? '600' : '400'}
-                color={isActive ? 'white' : 'text.secondary'}
-                bg={isActive ? 'whiteAlpha.100' : 'transparent'}
-                _hover={{
-                  textDecoration: 'none',
-                  color: 'white',
-                  bg: 'whiteAlpha.50',
-                }}
-                transition="all 0.15s"
-              >
-                {label}
-              </Link>
-            );
-          })}
+          {/* Inline links: desktop only; small screens use the drawer */}
+          <HStack spacing={1} display={{ base: 'none', md: 'flex' }}>
+            {navigationItems.map(({ path, label }) => {
+              const isActive = location.pathname === path;
+              return (
+                <Link
+                  key={path}
+                  as={RouterLink}
+                  to={path}
+                  px={3}
+                  py={1}
+                  borderRadius="md"
+                  fontSize="sm"
+                  fontWeight={isActive ? '600' : '400'}
+                  color={isActive ? 'white' : 'text.secondary'}
+                  bg={isActive ? 'whiteAlpha.100' : 'transparent'}
+                  _hover={{
+                    textDecoration: 'none',
+                    color: 'white',
+                    bg: 'whiteAlpha.50',
+                  }}
+                  transition="all 0.15s"
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </HStack>
 
           <Spacer />
           <NavLaunchCountdown />
           <MissionTerminal />
+
+          <IconButton
+            aria-label="Open navigation menu"
+            icon={<HamburgerIcon />}
+            display={{ base: 'inline-flex', md: 'none' }}
+            variant="ghost"
+            size="sm"
+            color="text.secondary"
+            _hover={{ color: 'white', bg: 'whiteAlpha.100' }}
+            onClick={onOpen}
+          />
         </Flex>
       </Container>
+
+      {/* Mobile navigation drawer */}
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose}>
+        <DrawerOverlay />
+        <DrawerContent bg="bg.card" borderLeft="1px solid" borderColor="border.default">
+          <DrawerCloseButton color="text.secondary" />
+          <DrawerHeader
+            display="flex"
+            alignItems="center"
+            gap={2}
+            fontSize="sm"
+            letterSpacing="widest"
+            textTransform="uppercase"
+            color="brand.400"
+          >
+            <Image
+              src="/icons/icon-192.png"
+              alt=""
+              boxSize="28px"
+              borderRadius="full"
+              draggable={false}
+            />
+            LaunchPoint
+          </DrawerHeader>
+          <DrawerBody>
+            <VStack align="stretch" spacing={1}>
+              {navigationItems.map(({ path, label }) => {
+                const isActive = location.pathname === path;
+                return (
+                  <Link
+                    key={path}
+                    as={RouterLink}
+                    to={path}
+                    onClick={onClose}
+                    px={4}
+                    py={3}
+                    borderRadius="lg"
+                    fontSize="md"
+                    fontWeight={isActive ? '600' : '400'}
+                    color={isActive ? 'white' : 'text.secondary'}
+                    bg={isActive ? 'whiteAlpha.100' : 'transparent'}
+                    _hover={{
+                      textDecoration: 'none',
+                      color: 'white',
+                      bg: 'whiteAlpha.50',
+                    }}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+            </VStack>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
   );
 }
@@ -171,6 +272,7 @@ function AnimatedRoutes() {
             <Route path="/"          element={<Home />} />
             <Route path="/explore"   element={<ExplorePage />} />
             <Route path="/launches"  element={<LaunchPage />} />
+            <Route path="/map"       element={<LaunchMapPage />} />
             <Route path="/mars"      element={<MarsPage />} />
             <Route path="/iss"       element={<ISSLivePage />} />
             <Route path="/solarsim"  element={<SolarSimPage />} />
@@ -193,6 +295,9 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  // Fires notifications/toasts for tracked launches while the app is open
+  useLaunchAlerts();
+
   return (
     <MotionConfig reducedMotion="user">
       <Router>
@@ -204,6 +309,7 @@ function App() {
             <Box as="main">
               <AnimatedRoutes />
             </Box>
+            <Footer />
           </Box>
         </Box>
       </Router>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Box,
   Heading,
@@ -14,6 +13,10 @@ import {
 import { keyframes } from "@emotion/react";
 import { FaRocket, FaMapMarkerAlt, FaSatellite } from "react-icons/fa";
 import LaunchFeed from "../components/LaunchFeed";
+import AlertSettings from "../components/AlertSettings";
+import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
+import { useCountdown } from "../hooks/useCountdown";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const STATUS_COLORS = {
   "Go for Launch": "green",
@@ -28,29 +31,6 @@ const pulseAnim = keyframes`
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 `;
-
-function useCountdown(launchTime) {
-  const [t, setT] = useState(null);
-
-  useEffect(() => {
-    if (!launchTime) return;
-    const tick = () => {
-      const diff = new Date(launchTime) - Date.now();
-      if (diff <= 0) { setT(null); return; }
-      setT({
-        d: Math.floor(diff / 86400000),
-        h: Math.floor((diff % 86400000) / 3600000),
-        m: Math.floor((diff % 3600000) / 60000),
-        s: Math.floor((diff % 60000) / 1000),
-      });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [launchTime]);
-
-  return t;
-}
 
 function CountdownBlock({ value, label }) {
   return (
@@ -104,28 +84,10 @@ function CountdownSeparator() {
 }
 
 export default function LaunchPage() {
-  const [nextLaunch, setNextLaunch] = useState(null);
-  const [loading, setLoading] = useState(true);
+  usePageTitle("Launches");
+  const { launches, loading } = useUpcomingLaunches();
+  const nextLaunch = launches[0] ?? null;
   const countdown = useCountdown(nextLaunch?.window_start);
-
-  useEffect(() => {
-    const fetchLaunch = async () => {
-      try {
-        const res = await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.results?.[0]) setNextLaunch(data.results[0]);
-      } catch (e) {
-        console.warn("LaunchPage hero fetch failed", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLaunch();
-    const id = setInterval(fetchLaunch, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
 
   const launchDate = nextLaunch?.window_start
     ? new Date(nextLaunch.window_start).toLocaleDateString("en-US", {
@@ -145,7 +107,7 @@ export default function LaunchPage() {
     <Container maxW="8xl" py={8}>
       <VStack spacing={8} align="stretch">
 
-        {/* Hero — Next Launch */}
+        {/* Hero // Next Launch */}
         <Box position="relative" rounded="2xl" overflow="hidden" minH="300px">
 
           {/* Blurred mission image background */}
@@ -161,7 +123,7 @@ export default function LaunchPage() {
             />
           )}
 
-          {/* Dark gradient overlay — heavier on the left so text is legible */}
+          {/* Dark gradient overlay // heavier on the left so text is legible */}
           <Box
             position="absolute"
             inset={0}
@@ -189,7 +151,7 @@ export default function LaunchPage() {
             direction={{ base: "column", lg: "row" }}
           >
 
-            {/* Left — launch info */}
+            {/* Left // launch info */}
             <VStack
               align={{ base: "center", lg: "start" }}
               spacing={4}
@@ -281,7 +243,7 @@ export default function LaunchPage() {
               </VStack>
             </VStack>
 
-            {/* Right — countdown */}
+            {/* Right // countdown */}
             <VStack spacing={3} align="center" flexShrink={0}>
               <Text
                 fontSize="10px"
@@ -325,24 +287,32 @@ export default function LaunchPage() {
         {/* Upcoming Launches feed */}
         <Box>
           <VStack spacing={6} align="stretch">
-            <Box>
-              <Heading
-                as="h2"
-                size="lg"
-                color="text.primary"
-                mb={2}
-                textAlign={{ base: "center", md: "left" }}
-              >
-                Upcoming Launches
-              </Heading>
-              <Text
-                color="text.secondary"
-                fontSize="md"
-                textAlign={{ base: "center", md: "left" }}
-              >
-                Latest information from global space agencies and launch providers
-              </Text>
-            </Box>
+            <Flex
+              direction={{ base: "column", md: "row" }}
+              align={{ base: "center", md: "flex-end" }}
+              justify="space-between"
+              gap={4}
+            >
+              <Box>
+                <Heading
+                  as="h2"
+                  size="lg"
+                  color="text.primary"
+                  mb={2}
+                  textAlign={{ base: "center", md: "left" }}
+                >
+                  Upcoming Launches
+                </Heading>
+                <Text
+                  color="text.secondary"
+                  fontSize="md"
+                  textAlign={{ base: "center", md: "left" }}
+                >
+                  Latest information from global space agencies and launch providers
+                </Text>
+              </Box>
+              <AlertSettings />
+            </Flex>
 
             <LaunchFeed />
           </VStack>

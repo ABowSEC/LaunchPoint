@@ -17,8 +17,11 @@ import {
   Badge
 } from "@chakra-ui/react";
 import { TimeIcon } from "@chakra-ui/icons";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
+import { MapContainer, Marker, Polyline, useMap } from "react-leaflet";
+import VectorBasemap from "../components/VectorBasemap";
+import { usePageTitle } from "../hooks/usePageTitle";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { fetchJson } from "../utils/fetchJson";
 import ErrorState from "../components/ErrorState";
 
@@ -78,10 +81,7 @@ function ISSMap({ lat, lng, positions }) {
         scrollWheelZoom={false}
         zoomControl={true}
       >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
+        <VectorBasemap />
         {trackSegments.map((segment, i) => (
           <Polyline key={i} positions={segment} color="#63B3ED" weight={2} opacity={0.7} />
         ))}
@@ -93,7 +93,7 @@ function ISSMap({ lat, lng, positions }) {
 }
 
 // ── YouTube live feed ─────────────────────────────────────────────────────────
-// NASA ISS HD Earth Viewing Experiment — live stream from cameras aboard the ISS
+// NASA ISS HD Earth Viewing Experiment // live stream from cameras aboard the ISS
 function ISSVideoFeed() {
   return (
     <Box
@@ -114,6 +114,7 @@ function ISSVideoFeed() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ISSLivePage() {
+  usePageTitle("ISS Live Tracker");
   const [issData, setIssData] = useState(null);
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +149,7 @@ export default function ISSLivePage() {
 
   useEffect(() => {
     fetchISS();
-    const interval = setInterval(fetchISS, 5000); // 5 s — ISS moves ~40 km per interval
+    const interval = setInterval(fetchISS, 5000); // 5 s // ISS moves ~40 km per interval
     return () => clearInterval(interval);
   }, []);
 

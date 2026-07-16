@@ -1,39 +1,14 @@
-import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, HStack, Text, Icon } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { FaRocket } from 'react-icons/fa';
-import { fetchJson } from '../utils/fetchJson';
-import { useApi } from '../hooks/useApi';
+import { useUpcomingLaunches } from '../hooks/useUpcomingLaunches';
+import { useCountdown } from '../hooks/useCountdown';
 
 const pulseGlow = keyframes`
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 `;
-
-function useCountdown(launchTime) {
-  const [timeLeft, setTimeLeft] = useState(null);
-
-  useEffect(() => {
-    if (!launchTime) return;
-
-    const tick = () => {
-      const diff = new Date(launchTime).getTime() - Date.now();
-      if (diff <= 0) { setTimeLeft(null); return; }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft({ d, h, m, s });
-    };
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [launchTime]);
-
-  return timeLeft;
-}
 
 function formatCountdown({ d, h, m, s }) {
   if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
@@ -44,16 +19,9 @@ function formatCountdown({ d, h, m, s }) {
 export default function NavLaunchCountdown() {
   // Errors are deliberately not rendered: the badge is decorative, so on
   // failure we keep showing the last good launch or hide entirely.
-  const { data, loading, refetch } = useApi((signal) =>
-    fetchJson('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1', { signal })
-  );
-  const nextLaunch = data?.results?.[0] ?? null;
+  const { launches, loading } = useUpcomingLaunches();
+  const nextLaunch = launches[0] ?? null;
   const timeLeft = useCountdown(nextLaunch?.window_start);
-
-  useEffect(() => {
-    const id = setInterval(() => refetch({ background: true }), 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [refetch]);
 
   const name = nextLaunch?.name ?? null;
 
@@ -72,6 +40,7 @@ export default function NavLaunchCountdown() {
       to="/launches"
       display="flex"
       alignItems="center"
+      flexShrink={0}
       px={3}
       py={1}
       borderRadius="full"
@@ -110,6 +79,7 @@ export default function NavLaunchCountdown() {
             color="orange.400"
             fontFamily="mono"
             letterSpacing="wide"
+            whiteSpace="nowrap"
           >
             {countdownText}
           </Text>

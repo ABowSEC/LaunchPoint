@@ -29,6 +29,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
 import Timeline from "../components/Timeline";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const PAGE_SIZE = 24;
 
@@ -194,6 +195,7 @@ function SearchResults({ activeQuery }) {
 }
 
 export default function ExplorePage() {
+  usePageTitle("Explore NASA Imagery");
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
 
@@ -215,7 +217,7 @@ export default function ExplorePage() {
             Explore the Cosmos
           </Heading>
           <Text fontSize="lg" color="text.secondary" mt={2}>
-            Search NASA's image library — missions, planets, astronauts, and more.
+            Search NASA's image library: missions, planets, astronauts, and more.
           </Text>
         </Box>
 

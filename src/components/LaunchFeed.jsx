@@ -28,9 +28,11 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@chakra-ui/icons";
-import { FaYoutube } from 'react-icons/fa';
-import { fetchJson } from '../utils/fetchJson';
-import { useApi } from '../hooks/useApi';
+import { FaYoutube, FaRegCalendarPlus, FaGoogle, FaStar } from 'react-icons/fa';
+import { useUpcomingLaunches } from '../hooks/useUpcomingLaunches';
+import { useFavorites } from '../hooks/useFavorites';
+import { downloadIcs, googleCalendarUrl } from '../utils/calendar';
+import TrackButton from './TrackButton';
 import ErrorState from './ErrorState';
 
 /**
@@ -236,7 +238,10 @@ function LaunchCard({ launch }) {
           </VStack>
           
           <VStack align="end" spacing={2}>
-            <LaunchStatusBadge status={launch.status?.name} />
+            <HStack spacing={2}>
+              <TrackButton launch={launch} />
+              <LaunchStatusBadge status={launch.status?.name} />
+            </HStack>
             <Button
               size="sm"
               variant="ghost"
@@ -338,6 +343,28 @@ function LaunchCard({ launch }) {
                   Watch Live
                 </Button>
               )}
+
+              <Button
+                size="sm"
+                leftIcon={<Icon as={FaRegCalendarPlus} />}
+                colorScheme="orange"
+                variant="outline"
+                onClick={() => downloadIcs(launch)}
+              >
+                Add to Calendar
+              </Button>
+
+              <Button
+                as={Link}
+                href={googleCalendarUrl(launch)}
+                isExternal
+                size="sm"
+                leftIcon={<Icon as={FaGoogle} />}
+                colorScheme="blue"
+                variant="outline"
+              >
+                Google Calendar
+              </Button>
             </HStack>
           </VStack>
         </Collapse>
@@ -350,16 +377,12 @@ function LaunchCard({ launch }) {
  * Main LaunchFeed Component
  */
 function LaunchFeed() {
-  const { data, loading, error, refetch } = useApi((signal) =>
-    fetchJson("https://ll.thespacedevs.com/2.2.0/launch/upcoming/", { signal })
-  );
-  const launches = data?.results?.slice(0, 10) ?? [];
+  const { launches: allLaunches, loading, error, refetch } = useUpcomingLaunches();
+  const { favorites } = useFavorites();
+  const [filter, setFilter] = useState('all');
 
-  // Background refresh: update quietly without collapsing the grid to a spinner
-  useEffect(() => {
-    const interval = setInterval(() => refetch({ background: true }), 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [refetch]);
+  const tracked = allLaunches.filter((l) => favorites.includes(l.id));
+  const launches = filter === 'tracked' ? tracked : allLaunches.slice(0, 10);
 
   if (loading) {
     return (
@@ -380,29 +403,51 @@ function LaunchFeed() {
     );
   }
 
-  if (launches.length === 0) {
-    return (
-      <Alert status="info" borderRadius="lg">
-        <AlertIcon />
-        <AlertTitle>No upcoming launches found</AlertTitle>
-        <AlertDescription>
-          Check back later for new launch schedules.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <VStack spacing={6} align="stretch">
-      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-        {launches.map((launch) => (
-          <LaunchCard key={launch.id} launch={launch} />
-        ))}
-      </SimpleGrid>
-      
+      {/* All / Tracked filter */}
+      <HStack spacing={2}>
+        <Button
+          size="sm"
+          variant={filter === 'all' ? 'solid' : 'outline'}
+          onClick={() => setFilter('all')}
+        >
+          All
+        </Button>
+        <Button
+          size="sm"
+          variant={filter === 'tracked' ? 'solid' : 'outline'}
+          colorScheme="orange"
+          leftIcon={<Icon as={FaStar} boxSize={3} />}
+          onClick={() => setFilter('tracked')}
+        >
+          Tracked{tracked.length > 0 ? ` (${tracked.length})` : ''}
+        </Button>
+      </HStack>
+
+      {launches.length === 0 ? (
+        <Alert status="info" borderRadius="lg">
+          <AlertIcon />
+          <AlertTitle>
+            {filter === 'tracked' ? 'No tracked launches' : 'No upcoming launches found'}
+          </AlertTitle>
+          <AlertDescription>
+            {filter === 'tracked'
+              ? 'Star a launch to follow it here and get countdown alerts.'
+              : 'Check back later for new launch schedules.'}
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          {launches.map((launch) => (
+            <LaunchCard key={launch.id} launch={launch} />
+          ))}
+        </SimpleGrid>
+      )}
+
       <Box textAlign="center" pt={4}>
         <Text fontSize="sm" color="text.secondary">
-          Showing {launches.length} upcoming launches · Data from The Space Devs API
+          Showing {launches.length} {filter === 'tracked' ? 'tracked' : 'upcoming'} launches · Data from The Space Devs API
         </Text>
       </Box>
     </VStack>

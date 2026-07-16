@@ -1,0 +1,250 @@
+import { useMemo } from "react";
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Spinner,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  Divider,
+} from "@chakra-ui/react";
+import { MapContainer, Marker, Popup } from "react-leaflet";
+import VectorBasemap from "../components/VectorBasemap";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
+import { usePageTitle } from "../hooks/usePageTitle";
+import TrackButton from "../components/TrackButton";
+import ErrorState from "../components/ErrorState";
+
+// Dot color per launch status abbreviation (The Space Devs status.abbrev)
+const STATUS_DOT = {
+  Go: "#48BB78",
+  TBC: "#ECC94B",
+  TBD: "#A0AEC0",
+  Success: "#48BB78",
+  Failure: "#F56565",
+  Hold: "#ED8936",
+};
+
+// Orange glowing marker showing how many upcoming launches fly from a site
+function siteIcon(count) {
+  return L.divIcon({
+    className: "",
+    html:
+      `<div style="width:30px;height:30px;border-radius:50%;` +
+      `background:rgba(251,146,60,0.92);border:2px solid #FDBA74;` +
+      `box-shadow:0 0 14px rgba(251,146,60,0.75);color:#0B1120;` +
+      `font:700 13px/26px sans-serif;text-align:center;">${count}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+}
+
+function formatShortDate(dateString) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Group launches by launch-site location so one marker represents a
+ * spaceport (which can have several pads), sorted soonest-first.
+ */
+function groupBySite(launches) {
+  const sites = new Map();
+  for (const launch of launches) {
+    const lat = Number.parseFloat(launch.pad?.latitude);
+    const lng = Number.parseFloat(launch.pad?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+    const key = launch.pad?.location?.name ?? `${lat.toFixed(1)},${lng.toFixed(1)}`;
+    if (!sites.has(key)) {
+      sites.set(key, {
+        key,
+        name: launch.pad?.location?.name ?? "Unknown site",
+        countryCode: launch.pad?.location?.country_code ?? null,
+        lat,
+        lng,
+        launches: [],
+      });
+    }
+    sites.get(key).launches.push(launch);
+  }
+
+  const list = [...sites.values()];
+  for (const site of list) {
+    site.launches.sort(
+      (a, b) => new Date(a.net ?? a.window_start) - new Date(b.net ?? b.window_start)
+    );
+  }
+  return list;
+}
+
+function SitePopup({ site }) {
+  const shown = site.launches.slice(0, 5);
+  const extra = site.launches.length - shown.length;
+
+  return (
+    <VStack align="stretch" spacing={2}>
+      <Box>
+        <Text fontWeight="bold" fontSize="sm" color="#E2E8F0">
+          {site.name}
+        </Text>
+        <Text fontSize="xs" color="#7A93B8">
+          {site.launches.length} upcoming launch{site.launches.length === 1 ? "" : "es"}
+        </Text>
+      </Box>
+      <Divider borderColor="#1E2D45" />
+      {shown.map((launch) => (
+        <HStack key={launch.id} spacing={2} align="center">
+          <TrackButton launch={launch} size="xs" />
+          <Box
+            w="8px"
+            h="8px"
+            borderRadius="full"
+            flexShrink={0}
+            bg={STATUS_DOT[launch.status?.abbrev] ?? "#A0AEC0"}
+            title={launch.status?.name}
+          />
+          <Box minW={0}>
+            <Text fontSize="xs" fontWeight="semibold" color="#E2E8F0" noOfLines={1}>
+              {launch.name}
+            </Text>
+            <Text fontSize="10px" color="#7A93B8" fontFamily="mono">
+              {formatShortDate(launch.net ?? launch.window_start)}
+            </Text>
+          </Box>
+        </HStack>
+      ))}
+      {extra > 0 && (
+        <Text fontSize="10px" color="#7A93B8">
+          + {extra} more from this site
+        </Text>
+      )}
+    </VStack>
+  );
+}
+
+export default function LaunchMapPage() {
+  usePageTitle("World Launch Map");
+  const { launches, loading, error, refetch } = useUpcomingLaunches();
+  const sites = useMemo(() => groupBySite(launches), [launches]);
+
+  const stats = useMemo(() => {
+    const mapped = sites.reduce((n, s) => n + s.launches.length, 0);
+    const countries = new Set(sites.map((s) => s.countryCode).filter(Boolean));
+    const providers = new Set(
+      launches.map((l) => l.launch_service_provider?.name).filter(Boolean)
+    );
+    return { mapped, sites: sites.length, countries: countries.size, providers: providers.size };
+  }, [sites, launches]);
+
+  return (
+    <Container maxW="8xl" py={8}>
+      <VStack spacing={6} align="stretch">
+        <Box>
+          <Heading as="h1" size="lg" color="text.primary" mb={2}>
+            World Launch Map
+          </Heading>
+          <Text color="text.secondary">
+            Every launch site with a mission on the schedule. Click a marker to
+            see what is flying from there and star launches to track them.
+          </Text>
+        </Box>
+
+        {loading ? (
+          <VStack py={16} spacing={6}>
+            <Spinner size="xl" color="blue.400" thickness="4px" />
+            <Text color="text.secondary">Loading launch sites...</Text>
+          </VStack>
+        ) : error ? (
+          <ErrorState title="Error loading launches!" message={error} onRetry={refetch} />
+        ) : (
+          <>
+            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+              {[
+                { label: "Upcoming Launches", value: stats.mapped },
+                { label: "Launch Sites", value: stats.sites },
+                { label: "Countries", value: stats.countries },
+                { label: "Providers", value: stats.providers },
+              ].map(({ label, value }) => (
+                <Stat
+                  key={label}
+                  bg="bg.card"
+                  border="1px solid"
+                  borderColor="border.default"
+                  borderRadius="xl"
+                  px={5}
+                  py={4}
+                >
+                  <StatNumber color="orange.400" fontSize="2xl">
+                    {value}
+                  </StatNumber>
+                  <StatLabel color="text.secondary" fontSize="xs">
+                    {label}
+                  </StatLabel>
+                </Stat>
+              ))}
+            </SimpleGrid>
+
+            <Box
+              borderRadius="xl"
+              overflow="hidden"
+              border="1px solid"
+              borderColor="border.default"
+              shadow="lg"
+              sx={{
+                ".leaflet-container": { bg: "#03050D", fontFamily: "inherit" },
+                ".leaflet-popup-content-wrapper": {
+                  bg: "#0B1120",
+                  color: "#E2E8F0",
+                  border: "1px solid #1E2D45",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
+                },
+                ".leaflet-popup-tip": { bg: "#0B1120" },
+                ".leaflet-popup-content": { m: "12px 14px", minW: "230px" },
+                ".leaflet-popup-close-button": { color: "#7A93B8" },
+              }}
+            >
+              <MapContainer
+                center={[22, 10]}
+                zoom={2}
+                minZoom={2}
+                worldCopyJump
+                style={{ height: "560px", width: "100%" }}
+              >
+                <VectorBasemap />
+                {sites.map((site) => (
+                  <Marker
+                    key={site.key}
+                    position={[site.lat, site.lng]}
+                    icon={siteIcon(site.launches.length)}
+                  >
+                    <Popup>
+                      <SitePopup site={site} />
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </Box>
+
+            <Text fontSize="sm" color="text.secondary" textAlign="center">
+              Marker numbers show upcoming launches per site · Data from The
+              Space Devs API
+            </Text>
+          </>
+        )}
+      </VStack>
+    </Container>
+  );
+}

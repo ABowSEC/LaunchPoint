@@ -14,9 +14,10 @@ import {
   Divider,
   VStack,
   HStack,
-  Badge
+  Badge,
+  Link
 } from "@chakra-ui/react";
-import { TimeIcon } from "@chakra-ui/icons";
+import { TimeIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 import { MapContainer, Marker, Polyline, useMap } from "react-leaflet";
 import VectorBasemap from "../components/VectorBasemap";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -93,22 +94,38 @@ function ISSMap({ lat, lng, positions }) {
 }
 
 // ── YouTube live feed ─────────────────────────────────────────────────────────
-// NASA ISS HD Earth Viewing Experiment // live stream from cameras aboard the ISS
+// NASA's external-camera Earth views, live from the ISS. YouTube live IDs
+// rot when NASA restarts a broadcast (the old one shows "recording is not
+// available"); the current ID lives at youtube.com/@NASA/streams.
 function ISSVideoFeed() {
   return (
-    <Box
-      as="iframe"
-      title="ISS Live Feed"
-      src="https://www.youtube.com/embed/P9C25Un7xaM?autoplay=1&mute=1"
-      width="100%"
-      height="500px"
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      borderRadius="xl"
-      shadow="md"
-      backgroundColor="black"
-    />
+    <Box>
+      <Box
+        as="iframe"
+        title="ISS Live Feed"
+        src="https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1"
+        width="100%"
+        sx={{ aspectRatio: "16 / 9" }}
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        borderRadius="xl"
+        shadow="md"
+        backgroundColor="black"
+      />
+      {/* Escape hatch for when NASA rotates the stream and the embed dies */}
+      <Text fontSize="xs" color="text.secondary" mt={2} textAlign="right">
+        Stream not playing?{" "}
+        <Link
+          href="https://www.youtube.com/@NASA/streams"
+          isExternal
+          color="brand.400"
+          _hover={{ color: "brand.300" }}
+        >
+          Watch NASA's live streams on YouTube <ExternalLinkIcon boxSize={3} mb={0.5} />
+        </Link>
+      </Text>
+    </Box>
   );
 }
 

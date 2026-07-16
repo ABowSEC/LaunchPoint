@@ -128,7 +128,11 @@ export default function ISSLivePage() {
     try {
       setError(null);
 
-      const data = await fetchJson("https://api.wheretheiss.at/v1/satellites/25544");
+      // wheretheiss.at is reliable but slow on first contact; the default
+      // 8 s timeout produced spurious first-load failures
+      const data = await fetchJson("https://api.wheretheiss.at/v1/satellites/25544", {
+        timeoutMs: 15000,
+      });
       setIssData(data);
       setLastUpdated(new Date());
       setRetryCount(0);

@@ -12,6 +12,7 @@ import {
   Spinner,
   Skeleton,
   Image,
+  Icon,
   IconButton,
   Divider,
   Link,
@@ -36,7 +37,7 @@ import {
   DownloadIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
-import { FaRocket, FaMapMarkerAlt } from "react-icons/fa";
+import { FaRocket, FaMapMarkerAlt, FaSatellite, FaGlobeAmericas, FaCompass } from "react-icons/fa";
 import { fetchJson } from "../utils/fetchJson";
 import { useApi } from "../hooks/useApi";
 import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
@@ -51,6 +52,61 @@ const pulse = keyframes`
 
 // Compact live next-launch panel for the hero; shares the app-wide cached
 // launch data so it costs no extra API requests.
+// Quick links to the sections the hero CTAs don't cover; accents echo each
+// destination page's own color scheme
+const QUICK_LINKS = [
+  {
+    to: "/mars",
+    icon: FaGlobeAmericas,
+    accent: "red.400",
+    title: "Mars Rovers",
+    blurb: "Imagery from the red planet's rovers",
+  },
+  {
+    to: "/iss",
+    icon: FaSatellite,
+    accent: "cyan.400",
+    title: "ISS Live",
+    blurb: "Real-time station tracking and onboard video",
+  },
+  {
+    to: "/explore",
+    icon: FaCompass,
+    accent: "teal.400",
+    title: "Explore",
+    blurb: "Search NASA's image library and space history",
+  },
+];
+
+function QuickLinks() {
+  return (
+    <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
+      {QUICK_LINKS.map(({ to, icon, accent, title, blurb }) => (
+        <Box
+          key={to}
+          as={RouterLink}
+          to={to}
+          bg="bg.card"
+          border="1px solid"
+          borderColor="border.default"
+          rounded="xl"
+          p={5}
+          transition="border-color 0.2s, background 0.2s"
+          _hover={{ borderColor: accent, bg: "whiteAlpha.50" }}
+        >
+          <Icon as={icon} color={accent} boxSize={5} mb={3} />
+          <Text fontWeight="600" color="text.primary" mb={1}>
+            {title}
+          </Text>
+          <Text fontSize="sm" color="text.secondary">
+            {blurb}
+          </Text>
+        </Box>
+      ))}
+    </SimpleGrid>
+  );
+}
+
 function NextLaunchPanel() {
   const { launches, loading } = useUpcomingLaunches();
   const next = launches[0] ?? null;
@@ -174,6 +230,14 @@ async function fetchApod(signal) {
   return data;
 }
 
+// Copyright strings from the APOD API can contain newlines and an embedded
+// "Text: <author>" attribution after the photographer; keep only the
+// photographer part, whitespace-collapsed.
+function cleanCopyright(raw) {
+  if (!raw) return "";
+  return raw.split(/\s*Text:/)[0].replace(/\s+/g, " ").trim();
+}
+
 export default function Home() {
   usePageTitle("LaunchPoint - Live Rocket Launch Tracker", { full: true });
   const { data: apod, loading, error, refetch } = useApi(fetchApod);
@@ -231,11 +295,8 @@ export default function Home() {
     const shouldTruncate = description.length > 320;
     const displayDescription = showFullDescription || !shouldTruncate ? description : `${description.slice(0, 320)}...`;
 
-    // Single source for the credit line; copyright strings from the API can
-    // contain newlines and embedded "Text:" attributions
-    const credit = apod.copyright && apod.copyright.trim() !== ""
-      ? `Photography by ${apod.copyright.replace(/\s+/g, " ").trim()}`
-      : "Courtesy of NASA";
+    const photographer = cleanCopyright(apod.copyright);
+    const credit = photographer ? `Photography by ${photographer}` : "Courtesy of NASA";
   
     return (
       <VStack spacing={8} align="stretch" animation={revealAnim}>
@@ -544,6 +605,11 @@ export default function Home() {
           </Flex>
         </Box>
 
+        {/* Quick links to the rest of the site */}
+        <Box mt={6}>
+          <QuickLinks />
+        </Box>
+
         <Divider my={12} />
 
         <Box>{renderAPODContent()}</Box>
@@ -617,16 +683,12 @@ export default function Home() {
                         <Text fontSize="sm" color="text.secondary">Type</Text>
                         <Text fontWeight="bold">{apod.media_type}</Text>
                       </Box>
-                      {apod.copyright && apod.copyright.trim() !== "" && (
+                      {cleanCopyright(apod.copyright) !== "" && (
                         <Box>
                           <Text fontSize="sm" color="text.secondary">Photographer</Text>
-                          <Text fontWeight="bold" color="text.primary">{apod.copyright}</Text>
+                          <Text fontWeight="bold" color="text.primary">{cleanCopyright(apod.copyright)}</Text>
                         </Box>
                       )}
-                      <Box>
-                        <Text fontSize="sm" color="text.secondary">Service Version</Text>
-                        <Text fontWeight="bold">{apod.service_version}</Text>
-                      </Box>
                     </SimpleGrid>
                   </Box>
 

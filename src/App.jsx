@@ -38,6 +38,7 @@ const MarsPage = lazy(() => import('./pages/MarsPage'));
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
 const SolarSimPage = lazy(() => import('./pages/SolarSimPage'));
 const ISSLivePage = lazy(() => import('./pages/issLive'));
+import ErrorBoundary from './components/ErrorBoundary';
 import MissionTerminal from './components/MissionTerminal';
 import StarField from './components/StarField';
 import WarpTransition from './components/WarpTransition';
@@ -257,6 +258,9 @@ function AnimatedRoutes() {
         exit="exit"
         transition={pageTransition.enter}
       >
+        {/* Keyed by the MotionDiv above, so navigating away from a crashed
+            page remounts the boundary and clears its error state */}
+        <ErrorBoundary>
         <Suspense fallback={<Text color="text.secondary" p={10}>Loading...</Text>}>
           <Routes location={location}>
             <Route path="/"          element={<Home />} />
@@ -279,6 +283,7 @@ function AnimatedRoutes() {
             />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </MotionDiv>
     </AnimatePresence>
   );
@@ -290,6 +295,9 @@ function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      {/* Last-resort boundary: catches errors outside the routed pages
+          (Navigation, StarField, alerts) that the per-route one can't */}
+      <ErrorBoundary>
       <Router>
         <Box minH="100vh" bg="bg.body">
           <StarField />
@@ -303,6 +311,7 @@ function App() {
           </Box>
         </Box>
       </Router>
+      </ErrorBoundary>
     </MotionConfig>
   );
 }

@@ -21,6 +21,18 @@ const colors = {
     500: '#182135',
     400: '#243552',
   },
+  // Brand palette from the Ephemeris logo sheet. Kept as named accents so the
+  // teal→purple mark colors, the terminal-green and HAL-red variants can be
+  // referenced directly (e.g. bgGradient="linear(to-r, accent.teal, accent.purple)").
+  accent: {
+    teal:     '#38B2AC',
+    tealLight:'#5AD4D1',
+    purple:   '#9F7AEA',
+    terminal: '#00FF9D',
+    hal:      '#FF3B30',
+    ink:      '#0F1115',
+    muted:    '#8B93A7',
+  },
 };
 
 const semanticTokens = {
@@ -32,6 +44,11 @@ const semanticTokens = {
     'text.secondary': { default: '#7A93B8', _dark: '#7A93B8' },
     'border.default': { default: '#1E2D45', _dark: '#1E2D45' },
     'brand.primary':  { default: 'brand.400' },
+    // Logo accents, exposed as semantic tokens for use across the UI.
+    'accent.primary':   { default: 'accent.teal' },
+    'accent.secondary': { default: 'accent.purple' },
+    'accent.terminal':  { default: 'accent.terminal' },
+    'accent.danger':    { default: 'accent.hal' },
   },
 };
 
@@ -45,7 +62,9 @@ const theme = extendTheme({
   colors,
   semanticTokens,
   fonts: {
-    heading: `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif`,
+    // Orbitron is the brand display face (wordmark + headings); IBM Plex Sans
+    // stays for body copy, where Orbitron's wide geometric forms hurt readability.
+    heading: `'Orbitron', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif`,
     body:    `'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif`,
   },
   styles: {

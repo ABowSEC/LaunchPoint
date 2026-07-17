@@ -20,39 +20,20 @@ export default function Footer() {
       bg="rgba(6, 9, 26, 0.80)"
     >
       <Container maxW="7xl" py={8}>
-        <Flex
-          direction={{ base: "column", md: "row" }}
-          align={{ base: "center", md: "flex-start" }}
-          justify="space-between"
-          gap={6}
-        >
-          {/* Emblem + wordmark until new brand art exists (the old full
-              lockup image carries the previous name) */}
-          <Flex align="center" gap={2.5} flexShrink={0}>
-            <Image
-              src="/icons/icon-192.png"
-              alt=""
-              boxSize="36px"
-              borderRadius="full"
-              draggable={false}
-            />
-            <Text
-              fontWeight="700"
-              fontSize="md"
-              letterSpacing="widest"
-              textTransform="uppercase"
-              color="brand.400"
-            >
-              Ephemeris
-            </Text>
-          </Flex>
+        <Flex direction="column" align="center" textAlign="center" gap={6}>
+          {/* Full brand lockup, centered. screen blend melts its near-black
+              field into the footer, leaving the teal→purple mark glowing. */}
+          <Image
+            src="/icons/ephemeris-logo.png"
+            alt="Project Ephemeris"
+            w="auto"
+            maxW={{ base: "260px", md: "360px" }}
+            h="auto"
+            mixBlendMode="screen"
+            draggable={false}
+          />
 
-          <Flex
-            direction="column"
-            align={{ base: "center", md: "flex-end" }}
-            textAlign={{ base: "center", md: "right" }}
-            gap={1.5}
-          >
+          <Flex direction="column" align="center" gap={1.5}>
             {CREDITS.map(({ label, href }) => (
               <Link
                 key={href}

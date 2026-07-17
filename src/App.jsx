@@ -17,7 +17,6 @@ import {
   Spacer,
   Container,
   Text,
-  useToast,
   useDisclosure,
   Drawer,
   DrawerOverlay,
@@ -228,7 +227,6 @@ function Navigation() {
 function KonamiWarp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const toast = useToast();
   const [warping, setWarping] = useState(false);
 
   useKonamiCode(() => {
@@ -242,14 +240,6 @@ function KonamiWarp() {
       onFinished={() => {
         setWarping(false);
         navigate('/solarsim');
-        toast({
-          title: 'Warp drive engaged',
-          description: 'Secret solar system sim unlocked. Welcome, navigator.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-          position: 'bottom',
-        });
       }}
     />
   );

@@ -17,10 +17,6 @@ import {
   Collapse,
   Divider,
   Flex,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
   Link,
 } from "@chakra-ui/react";
 import {
@@ -29,11 +25,15 @@ import {
   ChevronUpIcon,
 } from "@chakra-ui/icons";
 import { FaYoutube, FaRegCalendarPlus, FaGoogle, FaStar } from 'react-icons/fa';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useUpcomingLaunches } from '../hooks/useUpcomingLaunches';
 import { useFavorites } from '../hooks/useFavorites';
 import { downloadIcs, googleCalendarUrl } from '../utils/calendar';
 import TrackButton from './TrackButton';
 import ErrorState from './ErrorState';
+
+const MotionBox = motion(Box);
+const MotionImage = motion(Image);
 
 /**
  * Countdown Timer Component
@@ -86,26 +86,42 @@ function CountdownTimer({ launchTime }) {
     );
   }
 
+  const units = [
+    ...(timeLeft.days > 0 ? [{ value: timeLeft.days, label: "Days" }] : []),
+    { value: timeLeft.hours, label: "Hours" },
+    { value: timeLeft.minutes, label: "Min" },
+    { value: timeLeft.seconds, label: "Sec" },
+  ];
+
+  // Glowing digit tiles — pad to two figures so the row doesn't jitter.
   return (
-    <HStack spacing={2} wrap="wrap">
-      {timeLeft.days > 0 && (
-        <Stat textAlign="center" minW="60px">
-          <StatNumber fontSize="lg" color="orange.400">{timeLeft.days}</StatNumber>
-          <StatLabel fontSize="xs">Days</StatLabel>
-        </Stat>
-      )}
-      <Stat textAlign="center" minW="60px">
-        <StatNumber fontSize="lg" color="orange.400">{timeLeft.hours}</StatNumber>
-        <StatLabel fontSize="xs">Hours</StatLabel>
-      </Stat>
-      <Stat textAlign="center" minW="60px">
-        <StatNumber fontSize="lg" color="orange.400">{timeLeft.minutes}</StatNumber>
-        <StatLabel fontSize="xs">Min</StatLabel>
-      </Stat>
-      <Stat textAlign="center" minW="60px">
-        <StatNumber fontSize="lg" color="orange.400">{timeLeft.seconds}</StatNumber>
-        <StatLabel fontSize="xs">Sec</StatLabel>
-      </Stat>
+    <HStack spacing={2} justify="center" wrap="wrap">
+      {units.map(({ value, label }) => (
+        <VStack
+          key={label}
+          spacing={0}
+          minW="58px"
+          py={2}
+          borderRadius="lg"
+          bg="bg.elevated"
+          border="1px solid"
+          borderColor="border.default"
+        >
+          <Text
+            fontSize="2xl"
+            fontWeight="bold"
+            lineHeight="1.1"
+            fontFamily="mono"
+            color="orange.300"
+            textShadow="0 0 12px var(--chakra-colors-orange-400)"
+          >
+            {String(value).padStart(2, "0")}
+          </Text>
+          <Text fontSize="10px" letterSpacing="wider" textTransform="uppercase" color="text.secondary">
+            {label}
+          </Text>
+        </VStack>
+      ))}
     </HStack>
   );
 }
@@ -144,7 +160,7 @@ function LaunchStatusBadge({ status }) {
 /**
  * Individual Launch Card Component
  */
-function LaunchCard({ launch }) {
+function LaunchCard({ launch, index = 0, reduceMotion = false }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatDate = (dateString) => {
@@ -175,84 +191,113 @@ function LaunchCard({ launch }) {
   };
 
   return (
-    <Box
+    <MotionBox
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, ease: "easeOut", delay: (index % 2) * 0.08 }}
+      whileHover={reduceMotion ? undefined : { y: -4 }}
       bg="bg.card"
       border="1px solid"
       borderColor="border.default"
       borderRadius="xl"
       overflow="hidden"
       shadow="md"
+      position="relative"
+      role="group"
       _hover={{
-        shadow: "lg",
-        transform: "translateY(-2px)",
-        borderColor: "blue.300"
+        shadow: "0 12px 32px -12px var(--chakra-colors-blue-500)",
+        borderColor: "blue.400",
       }}
-      transition="all 0.3s ease"
     >
-      {/* Mission image banner */}
-      {launch.image && (
-        <Box position="relative" h="160px" overflow="hidden">
-          <Image
+      {/* Gradient accent rail across the top */}
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        h="3px"
+        bgGradient="linear(to-r, teal.400, blue.400, purple.400)"
+        zIndex={3}
+      />
+
+      {/* Hero: full-bleed mission image with the identity overlaid on a scrim.
+          Falls back to a brand gradient when the API gives us no image. */}
+      <Box position="relative" h={{ base: "210px", md: "230px" }} overflow="hidden">
+        {launch.image ? (
+          <MotionImage
             src={launch.image}
             alt={launch.name}
             w="100%"
             h="100%"
             objectFit="cover"
-            fallback={<Box h="160px" bg="bg.elevated" />}
+            fallback={<Box h="100%" bgGradient="linear(to-br, blue.900, purple.900)" />}
+            transition="transform 0.7s ease"
+            _groupHover={reduceMotion ? undefined : { transform: "scale(1.06)" }}
           />
-          <Box
-            position="absolute"
-            bottom={0}
-            left={0}
-            right={0}
-            h="60px"
-            bg="linear-gradient(to bottom, transparent, #0B1120)"
-          />
-        </Box>
-      )}
+        ) : (
+          <Box h="100%" w="100%" bgGradient="linear(to-br, blue.900, purple.900)" />
+        )}
 
-      {/* Header */}
-      <VStack spacing={4} align="stretch" p={6}>
-        <HStack justify="space-between" align="start">
-          <VStack align="start" spacing={2} flex={1}>
-            <HStack spacing={3}>
+        {/* Scrim so overlaid text stays legible over any image */}
+        <Box
+          position="absolute"
+          inset={0}
+          bg="linear-gradient(to bottom, rgba(11,17,32,0.15) 0%, rgba(11,17,32,0.15) 45%, rgba(11,17,32,0.92) 100%)"
+        />
 
-              
-              <Image
-                src={getAgencyLogo(launch.launch_service_provider?.name)}
-                alt={`${launch.launch_service_provider?.name ?? 'Agency'} logo`}
-                boxSize="60px"
-                objectFit="contain"
-                fallbackSrc="/logos/defaultAgency.jpg"
-              />
-    
-              <VStack align="start" spacing={1}>
-                <Text fontSize="lg" fontWeight="bold" color="text.primary">
-                  {launch.name}
-                </Text>
-                <Text fontSize="sm" color="text.secondary">
-                  {launch.launch_service_provider?.name || 'Unknown Agency'}
-                </Text>
-              </VStack>
-            </HStack>
-          </VStack>
-          
-          <VStack align="end" spacing={2}>
-            <HStack spacing={2}>
-              <TrackButton launch={launch} />
-              <LaunchStatusBadge status={launch.status?.name} />
-            </HStack>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsExpanded(!isExpanded)}
-              rightIcon={isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
-            >
-              {isExpanded ? 'Less' : 'More'}
-            </Button>
-          </VStack>
+        {/* Track + status, top-right */}
+        <HStack position="absolute" top={3} right={3} spacing={2} zIndex={2}>
+          <TrackButton launch={launch} />
+          <LaunchStatusBadge status={launch.status?.name} />
         </HStack>
 
+        {/* Identity, bottom-left */}
+        <HStack
+          position="absolute"
+          bottom={0}
+          left={0}
+          right={0}
+          p={4}
+          spacing={3}
+          align="flex-end"
+          zIndex={2}
+        >
+          <Box
+            bg="whiteAlpha.900"
+            borderRadius="lg"
+            p={1.5}
+            boxShadow="0 2px 8px rgba(0,0,0,0.4)"
+            flexShrink={0}
+          >
+            <Image
+              src={getAgencyLogo(launch.launch_service_provider?.name)}
+              alt={`${launch.launch_service_provider?.name ?? 'Agency'} logo`}
+              boxSize="44px"
+              objectFit="contain"
+              fallbackSrc="/logos/defaultAgency.jpg"
+            />
+          </Box>
+          <VStack align="start" spacing={0.5} flex={1} minW={0}>
+            <Text
+              fontSize="lg"
+              fontWeight="bold"
+              color="white"
+              lineHeight="1.2"
+              noOfLines={2}
+              textShadow="0 1px 6px rgba(0,0,0,0.7)"
+            >
+              {launch.name}
+            </Text>
+            <Text fontSize="sm" color="whiteAlpha.800" noOfLines={1}>
+              {launch.launch_service_provider?.name || 'Unknown Agency'}
+            </Text>
+          </VStack>
+        </HStack>
+      </Box>
+
+      {/* Body */}
+      <VStack spacing={4} align="stretch" p={6}>
         {/* Countdown Timer */}
         <Box textAlign="center" py={4}>
           <Text fontSize="sm" color="text.secondary" mb={2}>
@@ -277,6 +322,16 @@ function LaunchCard({ launch }) {
             )}
           </Box>
         </SimpleGrid>
+
+        <Button
+          size="sm"
+          variant="ghost"
+          alignSelf="center"
+          onClick={() => setIsExpanded(!isExpanded)}
+          rightIcon={isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+        >
+          {isExpanded ? 'Less detail' : 'More detail'}
+        </Button>
 
         {/* Expanded Details */}
         <Collapse in={isExpanded}>
@@ -369,7 +424,7 @@ function LaunchCard({ launch }) {
           </VStack>
         </Collapse>
       </VStack>
-    </Box>
+    </MotionBox>
   );
 }
 
@@ -380,6 +435,7 @@ function LaunchFeed() {
   const { launches: allLaunches, loading, error, refetch } = useUpcomingLaunches();
   const { favorites } = useFavorites();
   const [filter, setFilter] = useState('all');
+  const reduceMotion = useReducedMotion();
 
   const tracked = allLaunches.filter((l) => favorites.includes(l.id));
   const launches = filter === 'tracked' ? tracked : allLaunches.slice(0, 10);
@@ -439,8 +495,13 @@ function LaunchFeed() {
         </Alert>
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          {launches.map((launch) => (
-            <LaunchCard key={launch.id} launch={launch} />
+          {launches.map((launch, index) => (
+            <LaunchCard
+              key={launch.id}
+              launch={launch}
+              index={index}
+              reduceMotion={reduceMotion}
+            />
           ))}
         </SimpleGrid>
       )}

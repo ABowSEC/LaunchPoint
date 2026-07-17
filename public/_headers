@@ -1,0 +1,17 @@
+# Baseline security headers for Cloudflare Pages.
+# No Content-Security-Policy yet: the app pulls images and data from many
+# third-party hosts (NASA, Space Devs, mission image CDNs), so a CSP needs
+# to be built and tested against real traffic, not guessed at.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Hashed build assets are immutable: cache them for a year
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker itself must always revalidate so updates roll out
+/sw.js
+  Cache-Control: no-cache

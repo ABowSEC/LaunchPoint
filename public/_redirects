@@ -1,0 +1,3 @@
+# SPA fallback: serve the app shell for every route so deep links
+# like /launches and /map work on direct visits and refreshes
+/* /index.html 200

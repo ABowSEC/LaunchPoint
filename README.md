@@ -46,6 +46,10 @@ React 18, Vite, Chakra UI, React Router (code-split routes), Framer Motion, Thre
 | ISS            | `api.wheretheiss.at`                                         |
 | Map tiles      | OpenFreeMap © OpenMapTiles, data from OpenStreetMap          |
 
+## Support
+
+Ephemeris is free and ad-free. If it's useful to you, you can support development on [Ko-fi](https://ko-fi.com/abowsec) or [GitHub Sponsors](https://github.com/sponsors/ABowSEC).
+
 ## License
 
 Copyright (c) 2025 ABowSEC.

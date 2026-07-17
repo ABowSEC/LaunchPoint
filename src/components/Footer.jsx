@@ -1,5 +1,6 @@
 import { Box, Container, Flex, Image, Link, Text } from "@chakra-ui/react";
 import { FaGithub } from "react-icons/fa";
+import { SiKofi } from "react-icons/si";
 
 const CREDITS = [
   { label: "Launch data by The Space Devs", href: "https://thespacedevs.com" },
@@ -58,6 +59,18 @@ export default function Footer() {
               mt={1}
             >
               <FaGithub /> Source on GitHub
+            </Link>
+            <Link
+              href="https://ko-fi.com/abowsec"
+              isExternal
+              fontSize="xs"
+              color="text.secondary"
+              _hover={{ color: "text.primary" }}
+              display="inline-flex"
+              alignItems="center"
+              gap={1.5}
+            >
+              <SiKofi /> Support Ephemeris on Ko-fi
             </Link>
             <Text fontSize="xs" color="text.secondary" opacity={0.7} mt={1}>
               An independent project, not affiliated with or endorsed by NASA.

@@ -10,9 +10,19 @@
 
 import { fetchJson } from '../utils/fetchJson';
 
-const API_URL = 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50';
+// On deployed hosts, launch data comes through our Pages Function proxy
+// (functions/api/launches.js), which caches at the edge so Space Devs sees
+// a handful of requests per hour no matter the visitor count. Local dev
+// and LAN preview have no Functions runtime, so they call the API directly.
+const DEPLOYED_HOSTS = /(\.pages\.dev|ephemeris-online\.com)$/;
+const API_URL = DEPLOYED_HOSTS.test(window.location.hostname)
+  ? '/api/launches'
+  : 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50';
 const CACHE_KEY = 'ephemeris.upcomingLaunches.v1';
-export const FRESH_MS = 5 * 60 * 1000;
+// 15 min keeps an open tab at 4 requests/hour: multiple devices behind one
+// home IP fit the direct API's 15/hour budget, and countdowns tick locally
+// every second regardless of data age
+export const FRESH_MS = 15 * 60 * 1000;
 
 let inflight = null;
 

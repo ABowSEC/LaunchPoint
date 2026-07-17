@@ -17,8 +17,11 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {
-            // Launch data: prefer fresh, fall back to cache when offline
-            urlPattern: ({ url }) => url.hostname === 'll.thespacedevs.com',
+            // Launch data (direct API or our /api/launches edge proxy):
+            // prefer fresh, fall back to cache when offline
+            urlPattern: ({ url }) =>
+              url.hostname === 'll.thespacedevs.com' ||
+              (url.origin === self.location.origin && url.pathname === '/api/launches'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'launch-api',

@@ -12,7 +12,6 @@ import {
   Spinner,
   Skeleton,
   Image,
-  Icon,
   IconButton,
   Divider,
   Link,
@@ -37,7 +36,7 @@ import {
   DownloadIcon
 } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
-import { FaRocket, FaMapMarkerAlt, FaSatellite, FaGlobeAmericas, FaCompass } from "react-icons/fa";
+import { FaRocket, FaMapMarkerAlt } from "react-icons/fa";
 import { fetchJson } from "../utils/fetchJson";
 import { useApi } from "../hooks/useApi";
 import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
@@ -52,27 +51,21 @@ const pulse = keyframes`
 
 // Compact live next-launch panel for the hero; shares the app-wide cached
 // launch data so it costs no extra API requests.
-// Quick links to the sections the hero CTAs don't cover; accents echo each
-// destination page's own color scheme
+// Quick links to the sections the hero CTAs don't cover. Flight-console
+// index: numbered hairline rows sharing one accent, not an icon-card grid
 const QUICK_LINKS = [
   {
     to: "/mars",
-    icon: FaGlobeAmericas,
-    accent: "red.400",
     title: "Mars Rovers",
     blurb: "Imagery from the red planet's rovers",
   },
   {
     to: "/iss",
-    icon: FaSatellite,
-    accent: "cyan.400",
     title: "ISS Live",
     blurb: "Real-time station tracking and onboard video",
   },
   {
     to: "/explore",
-    icon: FaCompass,
-    accent: "teal.400",
     title: "Explore",
     blurb: "Search NASA's image library and space history",
   },
@@ -80,30 +73,50 @@ const QUICK_LINKS = [
 
 function QuickLinks() {
   return (
-    <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
-      {QUICK_LINKS.map(({ to, icon, accent, title, blurb }) => (
-        <Box
+    <Box borderTop="1px solid" borderColor="border.default">
+      {QUICK_LINKS.map(({ to, title, blurb }, i) => (
+        <Flex
           key={to}
           as={RouterLink}
           to={to}
-          bg="bg.card"
-          border="1px solid"
+          role="group"
+          gap={{ base: 3, md: 6 }}
+          py={5}
+          px={{ base: 1, md: 2 }}
+          borderBottom="1px solid"
           borderColor="border.default"
-          rounded="xl"
-          p={5}
-          transition="border-color 0.2s, background 0.2s"
-          _hover={{ borderColor: accent, bg: "whiteAlpha.50" }}
+          transition="background 0.2s"
+          _hover={{ bg: "whiteAlpha.50" }}
         >
-          <Icon as={icon} color={accent} boxSize={5} mb={3} />
-          <Text fontWeight="600" color="text.primary" mb={1}>
-            {title}
+          <Text fontFamily="mono" fontSize="sm" color="accent.terminal" pt="1px">
+            {String(i + 1).padStart(2, "0")}
           </Text>
-          <Text fontSize="sm" color="text.secondary">
-            {blurb}
-          </Text>
-        </Box>
+          <Box flex="1" minW={0}>
+            <Text
+              fontFamily="heading"
+              fontSize="sm"
+              fontWeight="600"
+              letterSpacing="0.14em"
+              textTransform="uppercase"
+              color="text.primary"
+              _groupHover={{ color: "brand.300" }}
+              transition="color 0.2s"
+            >
+              {title}
+            </Text>
+            <Text fontSize="sm" color="text.secondary" mt={1}>
+              {blurb}
+            </Text>
+          </Box>
+          <ArrowForwardIcon
+            alignSelf="center"
+            color="text.secondary"
+            transition="transform 0.2s, color 0.2s"
+            _groupHover={{ color: "brand.300", transform: "translateX(4px)" }}
+          />
+        </Flex>
       ))}
-    </SimpleGrid>
+    </Box>
   );
 }
 
@@ -115,7 +128,7 @@ function NextLaunchPanel() {
   if (loading) {
     return (
       <Box minW={{ base: "auto", md: "300px" }} textAlign="center" py={8}>
-        <Spinner color="orange.400" thickness="3px" />
+        <Spinner color="accent.terminal" thickness="3px" />
       </Box>
     );
   }
@@ -129,19 +142,19 @@ function NextLaunchPanel() {
       to="/launches"
       align="stretch"
       spacing={3}
-      bg="rgba(251,146,60,0.06)"
+      bg="rgba(0,255,157,0.04)"
       border="1px solid"
-      borderColor="orange.800"
+      borderColor="rgba(0,255,157,0.25)"
       rounded="xl"
       p={6}
       minW={{ base: "100%", md: "320px" }}
       maxW="360px"
       transition="all 0.2s"
-      _hover={{ borderColor: "orange.500", bg: "rgba(251,146,60,0.12)", textDecoration: "none" }}
+      _hover={{ borderColor: "rgba(0,255,157,0.55)", bg: "rgba(0,255,157,0.08)", textDecoration: "none" }}
     >
       <HStack spacing={2}>
-        <Box as={FaRocket} color="orange.400" boxSize="10px" animation={`${pulse} 2s ease-in-out infinite`} />
-        <Text fontSize="10px" color="orange.400" fontWeight="bold" letterSpacing="0.2em" textTransform="uppercase">
+        <Box as={FaRocket} color="accent.terminal" boxSize="10px" animation={`${pulse} 2s ease-in-out infinite`} />
+        <Text fontSize="10px" color="accent.terminal" fontWeight="bold" letterSpacing="0.2em" textTransform="uppercase">
           Next Launch
         </Text>
         {next.status?.abbrev && (
@@ -156,7 +169,15 @@ function NextLaunchPanel() {
       </Text>
 
       {countdown ? (
-        <Text fontFamily="mono" fontSize="3xl" fontWeight="bold" color="orange.300" letterSpacing="wide" lineHeight="1">
+        <Text
+          fontFamily="mono"
+          fontSize="3xl"
+          fontWeight="bold"
+          color="accent.terminal"
+          letterSpacing="wide"
+          lineHeight="1"
+          sx={{ fontVariantNumeric: "tabular-nums" }}
+        >
           {countdown.d > 0 && `${countdown.d}d `}
           {pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}
         </Text>
@@ -577,8 +598,8 @@ export default function Home() {
                   colorScheme="brand"
                   _hover={
                     prefersReducedMotion
-                      ? { boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
-                      : { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(59,130,246,0.35)' }
+                      ? { boxShadow: '0 8px 25px rgba(56,178,172,0.35)' }
+                      : { transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(56,178,172,0.35)' }
                   }
                   _active={prefersReducedMotion ? undefined : { transform: 'translateY(0)' }}
                   transition="transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease"

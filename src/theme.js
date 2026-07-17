@@ -1,17 +1,20 @@
 import { extendTheme } from '@chakra-ui/react';
 
 const colors = {
+  // Brand ramp built from the logo teal (#38B2AC at 500). Buttons and links
+  // inherit it via colorScheme="brand"; nothing in the app should reach for
+  // stock framework blues.
   brand: {
-    50:  '#e8f1ff',
-    100: '#c0d6ff',
-    200: '#91b8ff',
-    300: '#5e97ff',
-    400: '#3b82f6',
-    500: '#2563eb',
-    600: '#1d4ed8',
-    700: '#1e40af',
-    800: '#1e3a8a',
-    900: '#1e3363',
+    50:  '#e4faf8',
+    100: '#bff0ec',
+    200: '#93e2dc',
+    300: '#65d1c9',
+    400: '#43c0b8',
+    500: '#38B2AC',
+    600: '#2c928e',
+    700: '#227371',
+    800: '#195755',
+    900: '#113f3e',
   },
   space: {
     900: '#03050D',
@@ -45,6 +48,9 @@ const semanticTokens = {
     'border.default': { default: '#1E2D45', _dark: '#1E2D45' },
     'brand.primary':  { default: 'brand.400' },
     // Logo accents, exposed as semantic tokens for use across the UI.
+    // Flight-console rules: terminal green marks LIVE data (countdowns,
+    // telemetry, status dots) and nothing else; teal is for interactive
+    // things; HAL red only ever means scrub/hold/error.
     'accent.primary':   { default: 'accent.teal' },
     'accent.secondary': { default: 'accent.purple' },
     'accent.terminal':  { default: 'accent.terminal' },

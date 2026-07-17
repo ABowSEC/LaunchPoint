@@ -505,15 +505,17 @@ export default function Home() {
           overflow="hidden"
           p={{ base: 8, md: 12 }}
         >
-          {/* Emblem watermark; screen blend melts its black field into the card */}
+          {/* Emblem watermark; screen blend melts its black field into the card.
+              Centered while the hero is stacked (below lg) so the card's
+              overflow clip never crops it at mid-size windows. */}
           <Image
             src="/icons/mission-emblem.png"
             alt=""
             aria-hidden="true"
             position="absolute"
-            right={{ base: "-140px", lg: "340px" }}
+            right={{ base: "50%", lg: "340px" }}
             top="50%"
-            transform="translateY(-50%)"
+            transform={{ base: "translate(50%, -50%)", lg: "translateY(-50%)" }}
             boxSize={{ base: "360px", md: "460px" }}
             opacity={0.22}
             mixBlendMode="screen"

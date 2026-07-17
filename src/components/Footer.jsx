@@ -66,7 +66,7 @@ export default function Footer() {
               </Link>
             ))}
             <Link
-              href="https://github.com/ABowSEC/LaunchPoint"
+              href="https://github.com/ABowSEC/Project-Ephemeris"
               isExternal
               fontSize="xs"
               color="text.secondary"

@@ -507,7 +507,7 @@ export default function Home() {
         >
           {/* Emblem watermark; screen blend melts its black field into the card */}
           <Image
-            src="/icons/LaunchPNTLOGO.png"
+            src="/icons/ephemeris-logo.png"
             alt=""
             aria-hidden="true"
             position="absolute"

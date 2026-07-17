@@ -105,7 +105,7 @@ function Navigation() {
             mr={{ base: 3, md: 6 }}
             flexShrink={0}
           >
-            {/* Brand emblem (LaunchPNTLOGO artwork, from the app icon set) */}
+            {/* Brand emblem (ephemeris-logo artwork, from the app icon set) */}
             <Image
               src="/icons/icon-192.png"
               alt=""

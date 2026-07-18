@@ -548,7 +548,7 @@ export default function SolarSystemView() {
                   backgroundPosition="center"
                   border="2px solid"
                   borderColor={isActive ? "brand.400" : "transparent"}
-                  boxShadow={isActive ? "0 0 10px rgba(59,130,246,0.55)" : "none"}
+                  boxShadow={isActive ? "0 0 10px rgba(56,178,172,0.55)" : "none"}
                   mx="auto"
                   mb="4px"
                   transition="all 0.2s"
@@ -582,7 +582,7 @@ export default function SolarSystemView() {
               bg="whiteAlpha.100"
               border="2px solid"
               borderColor={!focusedPlanet ? "brand.400" : "transparent"}
-              boxShadow={!focusedPlanet ? "0 0 10px rgba(59,130,246,0.55)" : "none"}
+              boxShadow={!focusedPlanet ? "0 0 10px rgba(56,178,172,0.55)" : "none"}
               display="flex"
               alignItems="center"
               justifyContent="center"

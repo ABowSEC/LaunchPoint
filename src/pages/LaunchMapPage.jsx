@@ -186,7 +186,7 @@ export default function LaunchMapPage() {
                   px={5}
                   py={4}
                 >
-                  <StatNumber color="orange.400" fontSize="2xl">
+                  <StatNumber color="accent.terminal" fontSize="2xl">
                     {value}
                   </StatNumber>
                   <StatLabel color="text.secondary" fontSize="xs">

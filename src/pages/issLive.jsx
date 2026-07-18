@@ -259,14 +259,14 @@ export default function ISSLivePage() {
               <GridItem>
                 <Stat>
                   <StatLabel color="text.secondary">Altitude</StatLabel>
-                  <StatNumber color="orange.400">{issData?.altitude?.toFixed(1) ?? "—"}</StatNumber>
+                  <StatNumber color="accent.terminal">{issData?.altitude?.toFixed(1) ?? "—"}</StatNumber>
                   <StatHelpText>km above Earth</StatHelpText>
                 </Stat>
               </GridItem>
               <GridItem>
                 <Stat>
                   <StatLabel color="text.secondary">Velocity</StatLabel>
-                  <StatNumber color="orange.400">{issData?.velocity?.toFixed(0) ?? "—"}</StatNumber>
+                  <StatNumber color="accent.terminal">{issData?.velocity?.toFixed(0) ?? "—"}</StatNumber>
                   <StatHelpText>km/h</StatHelpText>
                 </Stat>
               </GridItem>

@@ -1,23 +1,27 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, HStack, Text, Icon } from '@chakra-ui/react';
+import { Box, HStack, Text } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
-import { FaRocket } from 'react-icons/fa';
 import { useUpcomingLaunches } from '../hooks/useUpcomingLaunches';
 import { useCountdown } from '../hooks/useCountdown';
 
-const pulseGlow = keyframes`
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+// Radar ping: the dot stays lit and emits a soft expanding ring, reading
+// as a live signal rather than a blinking light
+const ping = keyframes`
+  0%   { box-shadow: 0 0 6px rgba(0,255,157,0.6), 0 0 0 0    rgba(0,255,157,0.45); }
+  70%  { box-shadow: 0 0 6px rgba(0,255,157,0.6), 0 0 0 8px  rgba(0,255,157,0); }
+  100% { box-shadow: 0 0 6px rgba(0,255,157,0.6), 0 0 0 0    rgba(0,255,157,0); }
 `;
 
+// Console-style T-minus readout. Seconds only show inside 24h, where the
+// live tick earns its place; further out, minutes are enough.
 function formatCountdown({ d, h, m, s }) {
-  if (d > 0) return `${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
-  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
-  return `${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (d > 0) return `T-${d}d ${pad(h)}:${pad(m)}`;
+  return `T-${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 export default function NavLaunchCountdown() {
-  // Errors are deliberately not rendered: the badge is decorative, so on
+  // Errors are deliberately not rendered: the readout is decorative, so on
   // failure we keep showing the last good launch or hide entirely.
   const { launches, loading } = useUpcomingLaunches();
   const nextLaunch = launches[0] ?? null;
@@ -35,56 +39,49 @@ export default function NavLaunchCountdown() {
   if (!loading && !nextLaunch) return null;
 
   return (
-    <Box
+    <HStack
       as={RouterLink}
       to="/launches"
-      display="flex"
-      alignItems="center"
+      spacing={2.5}
       flexShrink={0}
-      px={3}
+      px={2.5}
       py={1}
-      borderRadius="full"
-      border="1px solid"
-      borderColor="orange.700"
-      bg="rgba(251,146,60,0.08)"
-      _hover={{ bg: 'rgba(251,146,60,0.16)', borderColor: 'orange.500', textDecoration: 'none' }}
-      transition="all 0.2s"
-      cursor="pointer"
+      rounded="md"
+      transition="background 0.2s"
+      _hover={{ bg: 'whiteAlpha.50', textDecoration: 'none' }}
     >
-      <HStack spacing={2}>
-        <Icon
-          as={FaRocket}
-          color="orange.400"
-          boxSize={3}
-          animation={`${pulseGlow} 2s ease-in-out infinite`}
-        />
+      <Box
+        boxSize="6px"
+        rounded="full"
+        bg="accent.terminal"
+        animation={`${ping} 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite`}
+        flexShrink={0}
+      />
 
-        {name && (
-          <Text
-            fontSize="xs"
-            color="orange.300"
-            fontWeight="medium"
-            display={{ base: 'none', lg: 'block' }}
-            maxW="200px"
-            isTruncated
-          >
-            {name}
-          </Text>
-        )}
+      {name && (
+        <Text
+          fontSize="xs"
+          color="text.secondary"
+          display={{ base: 'none', lg: 'block' }}
+          maxW="180px"
+          isTruncated
+        >
+          {name}
+        </Text>
+      )}
 
-        {countdownText && (
-          <Text
-            fontSize="xs"
-            fontWeight="bold"
-            color="orange.400"
-            fontFamily="mono"
-            letterSpacing="wide"
-            whiteSpace="nowrap"
-          >
-            {countdownText}
-          </Text>
-        )}
-      </HStack>
-    </Box>
+      {countdownText && (
+        <Text
+          fontSize="xs"
+          fontWeight="600"
+          color="accent.terminal"
+          fontFamily="mono"
+          whiteSpace="nowrap"
+          sx={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {countdownText}
+        </Text>
+      )}
+    </HStack>
   );
 }

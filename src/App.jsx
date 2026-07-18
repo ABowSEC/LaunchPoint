@@ -133,11 +133,10 @@ function Navigation() {
                   borderRadius="md"
                   fontSize="sm"
                   fontWeight={isActive ? '600' : '400'}
-                  color={isActive ? 'white' : 'text.secondary'}
-                  bg={isActive ? 'whiteAlpha.100' : 'transparent'}
+                  color={isActive ? 'brand.300' : 'text.secondary'}
                   _hover={{
                     textDecoration: 'none',
-                    color: 'white',
+                    color: isActive ? 'brand.200' : 'white',
                     bg: 'whiteAlpha.50',
                   }}
                   transition="all 0.15s"

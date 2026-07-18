@@ -576,7 +576,7 @@ export default function Home() {
                 color="text.primary"
                 sx={{ textWrap: 'balance' }}
               >
-                Your mission control for spaceflight
+                The sky has a schedule.
               </Heading>
 
               <Text fontSize="lg" color="text.secondary" maxW="44ch">

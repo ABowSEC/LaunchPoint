@@ -112,8 +112,8 @@ function CountdownTimer({ launchTime }) {
             fontWeight="bold"
             lineHeight="1.1"
             fontFamily="mono"
-            color="orange.300"
-            textShadow="0 0 12px var(--chakra-colors-orange-400)"
+            color="accent.terminal"
+            textShadow="0 0 12px rgba(0,255,157,0.5)"
           >
             {String(value).padStart(2, "0")}
           </Text>
@@ -402,7 +402,7 @@ function LaunchCard({ launch, index = 0, reduceMotion = false }) {
               <Button
                 size="sm"
                 leftIcon={<Icon as={FaRegCalendarPlus} />}
-                colorScheme="orange"
+                colorScheme="brand"
                 variant="outline"
                 onClick={() => downloadIcs(launch)}
               >

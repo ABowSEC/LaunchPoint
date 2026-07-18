@@ -36,9 +36,9 @@ function CountdownBlock({ value, label }) {
   return (
     <VStack spacing={0} align="center">
       <Box
-        bg="rgba(251,146,60,0.08)"
+        bg="rgba(0,255,157,0.05)"
         border="1px solid"
-        borderColor="orange.800"
+        borderColor="rgba(0,255,157,0.25)"
         rounded="lg"
         px={{ base: 3, md: 4 }}
         py={{ base: 2, md: 3 }}
@@ -49,7 +49,7 @@ function CountdownBlock({ value, label }) {
           fontSize={{ base: "2xl", md: "4xl" }}
           fontWeight="bold"
           fontFamily="mono"
-          color="orange.300"
+          color="accent.terminal"
           lineHeight="1"
         >
           {String(value).padStart(2, "0")}
@@ -72,7 +72,7 @@ function CountdownBlock({ value, label }) {
 function CountdownSeparator() {
   return (
     <Text
-      color="orange.700"
+      color="rgba(0,255,157,0.35)"
       fontSize={{ base: "xl", md: "3xl" }}
       fontFamily="mono"
       mb={4}
@@ -162,13 +162,13 @@ export default function LaunchPage() {
               <HStack spacing={2}>
                 <Icon
                   as={FaRocket}
-                  color="orange.400"
+                  color="accent.terminal"
                   boxSize="10px"
                   animation={`${pulseAnim} 2s ease-in-out infinite`}
                 />
                 <Text
                   fontSize="10px"
-                  color="orange.400"
+                  color="accent.terminal"
                   fontWeight="bold"
                   letterSpacing="0.2em"
                   textTransform="uppercase"
@@ -256,7 +256,7 @@ export default function LaunchPage() {
               </Text>
 
               {loading ? (
-                <Spinner color="orange.400" size="xl" thickness="3px" />
+                <Spinner color="accent.terminal" size="xl" thickness="3px" />
               ) : countdown ? (
                 <HStack spacing={1} align="flex-start">
                   <CountdownBlock value={countdown.d} label="Days" />
@@ -308,7 +308,7 @@ export default function LaunchPage() {
                   fontSize="md"
                   textAlign={{ base: "center", md: "left" }}
                 >
-                  Latest information from global space agencies and launch providers
+                  Every launch. Every countdown. Live.
                 </Text>
               </Box>
               <AlertSettings />

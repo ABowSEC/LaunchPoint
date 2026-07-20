@@ -10,12 +10,12 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import MarsFeed from "../components/MarsFeed";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const ROVERS = ["Curiosity", "Perseverance", "Opportunity", "Spirit"];
 
 export default function MarsPage() {
-  usePageTitle("Mars Rover Photos");
+  usePageMeta("/mars");
   const [rover, setRover] = useState("Curiosity");
   const [page, setPage] = useState(1);
 

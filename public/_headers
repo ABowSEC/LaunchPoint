@@ -1,17 +1,29 @@
-# Baseline security headers for Cloudflare Pages.
-# No Content-Security-Policy yet: the app pulls images and data from many
-# third-party hosts (NASA, Space Devs, mission image CDNs), so a CSP needs
-# to be built and tested against real traffic, not guessed at.
+# Security headers for Cloudflare Pages.
+#
+# The CSP is enforced. Notes on the non-obvious allowances:
+#   style-src 'unsafe-inline'  - Chakra/Emotion inject styles at runtime
+#   img-src https:             - mission images arrive from many third-party
+#                                CDNs (Space Devs, NASA, agency sites); the
+#                                host list is open-ended by nature
+#   worker-src blob:           - MapLibre GL spawns its worker from a blob URL
+#   frame-src youtube/vimeo    - ISS live feed embed; APOD video embeds
+#   connect-src               - the four data APIs plus OpenFreeMap tiles
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https:; connect-src 'self' https://ll.thespacedevs.com https://api.nasa.gov https://images-api.nasa.gov https://api.wheretheiss.at https://tiles.openfreemap.org; worker-src 'self' blob:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'
 
 # Hashed build assets are immutable: cache them for a year
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# The service worker itself must always revalidate so updates roll out
+# The service worker must always revalidate so updates roll out. The CSP is
+# detached here: a worker's fetch() calls are checked against the CSP served
+# with the worker script itself, so leaving the /* policy on sw.js blocks
+# runtime caching of cross-origin mission images and fonts. The page policy
+# above still governs everything the document loads.
 /sw.js
   Cache-Control: no-cache
+  ! Content-Security-Policy

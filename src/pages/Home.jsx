@@ -41,7 +41,7 @@ import { fetchJson } from "../utils/fetchJson";
 import { useApi } from "../hooks/useApi";
 import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
 import { useCountdown } from "../hooks/useCountdown";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 import ErrorState from "../components/ErrorState";
 
 const pulse = keyframes`
@@ -260,7 +260,7 @@ function cleanCopyright(raw) {
 }
 
 export default function Home() {
-  usePageTitle("Ephemeris - Live Rocket Launch Tracker", { full: true });
+  usePageMeta("/");
   const { data: apod, loading, error, refetch } = useApi(fetchApod);
   const [showFullDescription, setShowFullDescription] = useState(false);
 

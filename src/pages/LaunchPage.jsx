@@ -16,7 +16,7 @@ import LaunchFeed from "../components/LaunchFeed";
 import AlertSettings from "../components/AlertSettings";
 import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
 import { useCountdown } from "../hooks/useCountdown";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const STATUS_COLORS = {
   "Go for Launch": "green",
@@ -84,7 +84,7 @@ function CountdownSeparator() {
 }
 
 export default function LaunchPage() {
-  usePageTitle("Launches");
+  usePageMeta("/launches");
   const { launches, loading } = useUpcomingLaunches();
   const nextLaunch = launches[0] ?? null;
   const countdown = useCountdown(nextLaunch?.window_start);

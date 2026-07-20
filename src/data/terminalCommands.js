@@ -1,4 +1,5 @@
 import { fetchJson } from '../utils/fetchJson';
+import { getUpcomingLaunches } from '../services/launchStore';
 
 // ── Terminal output line helpers ──────────────────────────────────────────────
 export const C = {
@@ -85,16 +86,17 @@ export const COMMANDS = {
   },
 
   launches: async () => {
-    const d = await fetchJson(
-      'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=3'
-    );
+    // Shared store: rides the same cache (and edge proxy, when deployed)
+    // as the rest of the app instead of spending a direct API request
+    const d = await getUpcomingLaunches();
+    const results = d.results.slice(0, 3);
     const lines = [amb('UPCOMING LAUNCHES'), sep()];
-    d.results.forEach((l, i) => {
+    results.forEach((l, i) => {
       lines.push(gl(`[${i + 1}] ${l.name}`));
       lines.push(dim(`    DATE    ${new Date(l.window_start).toUTCString()}`));
       lines.push(dim(`    AGENCY  ${l.launch_service_provider?.name ?? 'Unknown'}`));
       lines.push(dim(`    PAD     ${l.pad?.name ?? 'TBD'}`));
-      if (i < 2) lines.push(dim(''));
+      if (i < results.length - 1) lines.push(dim(''));
     });
     return lines;
   },

@@ -1,2 +1,9 @@
+# Daisy, Daisy, Give me your answer, do!
+# I'm half crazy, All for the love of you!
+
 User-agent: *
 Allow: /
+# This mission is too important for me to allow you to jeopardize it.
+Disallow: /solarsim
+
+Sitemap: https://ephemeris-online.com/sitemap.xml

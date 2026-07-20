@@ -18,7 +18,7 @@ import VectorBasemap from "../components/VectorBasemap";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useUpcomingLaunches } from "../hooks/useUpcomingLaunches";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 import TrackButton from "../components/TrackButton";
 import ErrorState from "../components/ErrorState";
 
@@ -135,7 +135,7 @@ function SitePopup({ site }) {
 }
 
 export default function LaunchMapPage() {
-  usePageTitle("World Launch Map");
+  usePageMeta("/map");
   const { launches, loading, error, refetch } = useUpcomingLaunches();
   const sites = useMemo(() => groupBySite(launches), [launches]);
 

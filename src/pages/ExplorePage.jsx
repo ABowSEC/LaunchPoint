@@ -29,7 +29,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
 import Timeline from "../components/Timeline";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const PAGE_SIZE = 24;
 
@@ -195,7 +195,7 @@ function SearchResults({ activeQuery }) {
 }
 
 export default function ExplorePage() {
-  usePageTitle("Explore NASA Imagery");
+  usePageMeta("/explore");
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
 

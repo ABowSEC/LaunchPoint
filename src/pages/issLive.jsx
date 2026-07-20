@@ -20,7 +20,7 @@ import {
 import { TimeIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 import { MapContainer, Marker, Polyline, useMap } from "react-leaflet";
 import VectorBasemap from "../components/VectorBasemap";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { usePageMeta } from "../hooks/usePageMeta";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fetchJson } from "../utils/fetchJson";
@@ -131,7 +131,7 @@ function ISSVideoFeed() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ISSLivePage() {
-  usePageTitle("ISS Live Tracker");
+  usePageMeta("/iss");
   const [issData, setIssData] = useState(null);
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);

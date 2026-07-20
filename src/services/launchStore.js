@@ -15,14 +15,17 @@ import { fetchJson } from '../utils/fetchJson';
 // a handful of requests per hour no matter the visitor count. Local dev
 // and LAN preview have no Functions runtime, so they call the API directly.
 const DEPLOYED_HOSTS = /(\.pages\.dev|ephemeris-online\.com)$/;
-const API_URL = DEPLOYED_HOSTS.test(window.location.hostname)
+const USES_PROXY = DEPLOYED_HOSTS.test(window.location.hostname);
+const API_URL = USES_PROXY
   ? '/api/launches'
   : 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50';
 const CACHE_KEY = 'ephemeris.upcomingLaunches.v1';
-// 15 min keeps an open tab at 4 requests/hour: multiple devices behind one
-// home IP fit the direct API's 15/hour budget, and countdowns tick locally
-// every second regardless of data age
-export const FRESH_MS = 15 * 60 * 1000;
+// Behind the proxy the edge cache absorbs refetches, so clients can ask
+// every 5 min and catch scrubs and slips quickly. Direct API calls spend
+// the free tier's 15/hour per-IP budget, so the TTL stretches to 15 min:
+// an open tab costs 4 requests/hour, leaving room for other devices on
+// the same home IP. Countdowns tick locally regardless of data age.
+export const FRESH_MS = (USES_PROXY ? 5 : 15) * 60 * 1000;
 
 let inflight = null;
 
